@@ -135,7 +135,7 @@ local funcs = {}; do
         if funcs:isAlive() then
             for i,v in next, entity.entityList do 
                 if (v.Targetable or not teamCheck) and funcs:isTargetable(v.Player) then 
-                    local dist = (lplr.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                    local dist = (lplr.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
                     if dist < maxDist then
                         maxDist, val = dist, v
                     end
@@ -151,10 +151,10 @@ local funcs = {}; do
             return val
         end
 
-        local selfPos = lplr.Character.HumanoidRootPart.Position
+        local selfPos = entity.character.HumanoidRootPart.Position
         for i,v in next, entity.entityList do 
             if (v.Targetable or not teamCheck) and funcs:isTargetable(v.Player) then 
-                local dist = (selfPos - v.Character.HumanoidRootPart.Position).Magnitude
+                local dist = (selfPos - v.HumanoidRootPart.Position).Magnitude
                 if dist < maxDist then
                     table.insert(val, v)
                 end
@@ -162,7 +162,7 @@ local funcs = {}; do
         end
 
         local sortFunction = sortFunction or function(ent1, ent2)
-            return (selfPos - ent1.Character.HumanoidRootPart.Position).Magnitude < (selfPos - ent2.Character.HumanoidRootPart.Position).Magnitude
+            return (selfPos - ent1.HumanoidRootPart.Position).Magnitude < (selfPos - ent2.HumanoidRootPart.Position).Magnitude
         end
         table.sort(val, sortFunction)
 

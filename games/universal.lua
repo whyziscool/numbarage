@@ -340,6 +340,10 @@ do
                             drawings[Name].Outline = ESPOutline
                             drawings[Name].Inner = ESPInner
                         end
+                        
+                        if not ESPOutline or not ESPInner then 
+                            return 
+                        end
 
                         ESPOutline.Color = Color3.new(0, 0, 0)
                         ESPOutline.Thickness = 2.7

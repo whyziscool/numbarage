@@ -917,12 +917,14 @@ function GuiLibrary.CreateWindow(args)
                         v.Toggle()
                         --dropdownapi.Expand()
                         local tab = {}
+                        local string_tab = {}
                         for i,v in next, dropdownapi.Values do 
                             if v.Enabled then 
                                 tab[#tab+1] = v.Value
+                                string_tab[#string_tab+1] = tostring(v.Value)
                             end
                         end
-                        Name_8.Text = args.Name .. (#tab~=0 and (" - " .. table.concat(tab, ", ")) or "")
+                        Name_8.Text = args.Name .. (#string_tab~=0 and (" - " .. table.concat(string_tab, ", ")) or "")
                         if args.Function then
                             args.Function(tab)
                         end
