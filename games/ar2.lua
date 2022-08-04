@@ -549,13 +549,6 @@ do
         Function = function(callback) end
     })
 
-    local ACDisabler = {};
-    ACDisabler = GuiLibrary.Objects.utilitiesWindow.API.CreateOptionsButton({
-        Name = "acdisabler",
-        Function = function(callback) end
-    })
-
-
     local AntiBan = {};
     AntiBan = GuiLibrary.Objects.utilitiesWindow.API.CreateOptionsButton({
         Name = "antiban",
