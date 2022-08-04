@@ -327,6 +327,8 @@ do
                     end
                     for _, v in next, entity.entityList do
 
+                        if not funcs:isAlive(v.Player, true) then continue end
+
                         local Name = v.Player.Name
                         local ESPOutline, ESPInner
                         if done[Name] then
@@ -392,7 +394,7 @@ do
 end
 
 do 
-    local TracersColorMode, TracersPosition, TracersThickness, TracersFrom = {}, {}, {}, {}
+    local TracersColorMode, TracersPosition, TracersThickness, TracersFrom, OnlyBehind, TracerTransparency = {}, {}, {}, {}, {}, {}
     local tracers = {}
     local drawings = {}
     local done = {}
@@ -405,11 +407,34 @@ do
                         v.Visible = false
                     end
                     for _, v in next, entity.entityList do 
-                        local Position, Visible
+
+                        if not funcs:isAlive(v.Player, true) then 
+                            continue 
+                        end
+
+                        local Position, Visible, Part
                         if TracersPosition.Value == 'root' then
-                            Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(v.RootPart.Position)
+                            Part = v.RootPart
                         elseif TracersPosition.Value == 'head' then
-                            Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(v.Head.Position)
+                            Part = v.Head
+                        end
+
+                        Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(Part.Position)
+                        if OnlyBehind.Enabled and Visible then
+                            continue
+                        end
+                        if not Visible and TracersFrom.Value ~= "bottom" and not (0 < Position.Z) then 
+                            local ObjectSpace = workspace.CurrentCamera.CFrame:PointToObjectSpace(Part.Position)
+                            local AngledCalculation = (math.atan2(ObjectSpace.Y, ObjectSpace.X) + math.pi)
+                            local CalculatedAngle = CFrame.Angles(0, math.rad(89.9), 0):VectorToWorldSpace(-Vector3.zAxis)
+                            local Angle = CFrame.Angles(0, 0, AngledCalculation):VectorToWorldSpace(CalculatedAngle)
+                            local WorldSpacePoint = workspace.CurrentCamera.CFrame:PointToWorldSpace(Angle)
+                            Position = workspace.CurrentCamera:WorldToViewportPoint(WorldSpacePoint)
+                            Visible = true
+                        else
+                            if TracersFrom.Value == "bottom" and not Visible then 
+                                continue
+                            end
                         end
 
                         local Tracer
@@ -421,26 +446,28 @@ do
                             drawings[v.Player.Name] = Tracer
                         end
                         
-                        if Visible then 
-                            local ViewportSize = workspace.CurrentCamera.ViewportSize
-                            local From
-                            if TracersFrom.Value == 'middle' then
-                                From = Vector2.new(ViewportSize.X / 2, ViewportSize.Y / 2)
-                            elseif TracersFrom.Value == 'bottom' then
-                                From = Vector2.new(ViewportSize.X / 2, ViewportSize.Y)
-                            elseif TracersFrom.Value == 'top' then
-                                From = Vector2.new(ViewportSize.X / 2, 0)
-                            elseif TracersFrom.Value == 'mouse' then
-                                From = UIS:GetMouseLocation()
-                            end
-
-                            Tracer.Color = funcs:getColorFromEntity(v, TracersColorMode.Value == 'team', TracersColorMode.Value == 'color theme')
-                            Tracer.Thickness = TracersThickness.Value
-                            Tracer.Visible = true
-                            Tracer.Transparency = 1
-                            Tracer.From = From
-                            Tracer.To = Vector2.new(Position.X, Position.Y) 
+                        if not Tracer then 
+                            continue 
                         end
+
+                        local ViewportSize = workspace.CurrentCamera.ViewportSize
+                        local From, To = nil, Vector2.new(Position.X, Position.Y)
+                        if TracersFrom.Value == 'middle' then
+                            From = Vector2.new(ViewportSize.X / 2, ViewportSize.Y / 2)
+                        elseif TracersFrom.Value == 'bottom' then
+                            From = Vector2.new(ViewportSize.X / 2, ViewportSize.Y)
+                        elseif TracersFrom.Value == 'top' then
+                            From = Vector2.new(ViewportSize.X / 2, 0)
+                        elseif TracersFrom.Value == 'mouse' then
+                            From = UIS:GetMouseLocation()
+                        end
+
+                        Tracer.Color = funcs:getColorFromEntity(v, TracersColorMode.Value == 'team', TracersColorMode.Value == 'color theme')
+                        Tracer.Thickness = TracersThickness.Value
+                        Tracer.Visible = true
+                        Tracer.Transparency = TracerTransparency.Value
+                        Tracer.From = From
+                        Tracer.To = To
                     end
                 end)
             else
@@ -479,10 +506,26 @@ do
         Round = 1,
         Function = function() end
     })
+    TracerTransparency = tracers.CreateSlider({
+        Name = "transparency",
+        Min = 0,
+        Max = 1,
+        Default = 0.5,
+        Round = 2,
+        Function = function() end
+    })
+    OnlyBehind = tracers.CreateToggle({
+        Name = "only behind",
+        Default = false,
+        Function = function() end
+    })
 end
 
 do
     local function formatNametag(ent) 
+        if not entity.isAlive then 
+            return ("[0] " .. ent.Player.Name .. "| %sHP"):format(ent.Humanoid.Health)
+        end
         return string.format("[%s] %s | %sHP", 
         entity.character.HumanoidRootPart and tostring(math.round((ent.RootPart.Position - entity.character.HumanoidRootPart.Position).Magnitude)) or "N/A",
         ent.Player.Name, 
@@ -508,6 +551,9 @@ do
                     end
 
                     for _, v in next, entity.entityList do 
+
+                        if not funcs:isAlive(v.Player, true) then continue end
+
                         local Name = v.Player.Name
                         local NametagBG, NametagText
                         if done[Name] then
@@ -520,6 +566,10 @@ do
                             NametagBG = Drawing.new("Square")
                             drawings[Name].Text = NametagText
                             drawings[Name].BG = NametagBG
+                        end
+
+                        if not NametagBG or not NametagText then 
+                            continue 
                         end
 
                         local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(v.Head.Position + Vector3.new(0, 1.75, 0))
@@ -640,7 +690,9 @@ do
                     if not entity.isAlive then 
                         repeat task.wait() until entity.isAlive
                     end
-                    BAV.Parent = character.HumanoidRootPart
+                    if BAV then
+                        BAV.Parent = character.HumanoidRootPart
+                    end
                 end)
             else
                 if BAV then 
@@ -676,5 +728,163 @@ do
         Max = 75,
         Round = 0,
         Default = 20
+    })
+end
+
+do
+    local OldFOV
+    local Connection, Connection2
+    local FOVValue, FOVMode = {}, {}
+    local FOV = {}; FOV = GuiLibrary.Objects.renderWindow.API.CreateOptionsButton({
+        Name = "fovchanger",
+        Function = function(callback, wasKeyDown) 
+            if callback then 
+                OldFOV = OldFOV or workspace.CurrentCamera.FieldOfView
+                if FOVMode.Value == 'zoom' and not wasKeyDown then 
+                    FOV.Toggle()
+                    return
+                end
+                workspace.CurrentCamera.FieldOfView = FOVValue.Value
+                Connection = workspace.CurrentCamera:GetPropertyChangedSignal("FieldOfView"):Connect(function() 
+                    if workspace.CurrentCamera.FieldOfView ~= FOVValue.Value then 
+                        workspace.CurrentCamera.FieldOfView = FOVValue.Value
+                    end
+                end)
+                if FOVMode.Value == 'zoom' then
+                    Connection2 = game:GetService("UserInputService").InputEnded:Connect(function(input) 
+                        if input.KeyCode.Name == FOV.Bind then
+                            Connection2:Disconnect()
+                            Connection2 = nil
+                            FOV.Toggle()
+                        end
+                    end)
+                end
+            else
+                if Connection then 
+                    Connection:Disconnect()
+                    Connection = nil
+                end
+                workspace.CurrentCamera.FieldOfView = OldFOV
+            end
+        end
+    }) 
+    FOVMode = FOV.CreateDropdown({
+        Name = "mode",
+        Default = "set",
+        List = {"set", "zoom"},
+        Function = function() end
+    })
+    FOVValue = FOV.CreateSlider({
+        Name = "value",
+        Min = 10,
+        Max = 120,
+        Round = 0,
+        Default = 90,
+        Function = function(value) 
+            if FOV.Enabled then
+                workspace.CurrentCamera.FieldOfView = value
+            end
+        end
+    })
+end
+
+do
+    local BlinkModes = {}
+    local Blink = {}; Blink = GuiLibrary.Objects.exploitsWindow.API.CreateOptionsButton({
+        Name = "blink",
+        Function = function(callback) 
+            if callback then 
+                if BlinkModes.Values["incoming"].Enabled then 
+                    settings().Network.IncomingReplicationLag = 999e999
+                end
+                if BlinkModes.Values["outgoing"].Enabled then 
+                    funcs:bindToHeartbeat("blink-outgoing", function() 
+                        if not entity.isAlive then return end
+                        sethiddenproperty(entity.character.HumanoidRootPart, "NetworkIsSleeping", true)
+                    end)
+                end
+            else
+                funcs:unbindFromHeartbeat("blink-outgoing")
+                settings().Network.IncomingReplicationLag = 0
+            end
+        end
+    })
+    BlinkModes = Blink.CreateMultiDropdown({
+        Name = "mode",
+        List = {"incoming", "outgoing"},
+        Default = {"incoming", "outgoing"},
+        Function = function() 
+            if Blink.Enabled then 
+                Blink.Toggle()
+                Blink.Toggle()
+            end
+        end
+    })
+end
+
+do 
+    local Worker = funcs:newWorker()
+
+    local Old = {}
+    local Override = {
+        GlobalShadows = false,
+        Brightness = 1.5,
+        --Ambient = Color3.fromRGB(255, 255, 255),
+        ClockTime = 12,   
+    }
+    local Fullbright={}; Fullbright = GuiLibrary.Objects.renderWindow.API.CreateOptionsButton({
+        Name = "fullbright",
+        Function = function(callback) 
+            if callback then 
+                for i,v in next, Override do 
+                    if type(v)=='function' then v() continue end
+                    Old[i] = game:GetService("Lighting")[i]
+                    game:GetService("Lighting")[i] = v
+                    Worker:add(game:GetService("Lighting"):GetPropertyChangedSignal(i):Connect(function() 
+                        if game:GetService("Lighting")[i] ~= v then 
+                            game:GetService("Lighting")[i] = v
+                        end
+                    end))
+                end
+            else
+                Worker:clean()
+                for i,v in next, Old do 
+                    if typeof(v)=='Instance' then v:Destroy() continue end
+                    game:GetService("Lighting")[i] = v
+                    Old[i] = nil
+                end
+            end
+        end
+    })
+end
+
+do 
+    local old = {}
+    local Phase = {}; Phase = GuiLibrary.Objects.exploitsWindow.API.CreateOptionsButton({
+        Name = "phase",
+        Function = function(callback) 
+            if callback then 
+                funcs:bindToStepped("phase", function() 
+                    if not entity.isAlive then return end
+                    for i,v in next, lplr.Character:GetChildren() do 
+                        local found = table.find(old, v)
+                        if v:IsA("BasePart") and (v.CanCollide or found) then 
+                            if not found then
+                                old[#old+1] = v
+                            end
+                            v.CanCollide = false
+                        end
+                    end
+                end)
+            else
+                funcs:unbindFromStepped("phase")
+                for i,v in next, old do 
+                    if v:IsA("BasePart") then 
+                        v.CanCollide = true
+                    end
+                end
+                old = {}
+            end
+        end
     })
 end

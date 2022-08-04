@@ -19,3 +19,88 @@ require(game:GetService("ReplicatedStorage").TS.remotes).default.Client,
 debug.getupvalue(require(lplr.PlayerScripts.TS.controllers.game["block-break-controller"]).BlockBreakController.onEnable, 1)
 
 local Client_Get, Client_WaitFor = getmetatable(Client).Get, getmetatable(Client).WaitFor
+
+local modules = {
+    QueueMeta = require(game:GetService("ReplicatedStorage").TS.game["queue-meta"]).QueueMeta,
+}
+
+local remotes = {
+    JoinQueueRemote = game:GetService("ReplicatedStorage")["events-@easy-games/lobby:shared/event/lobby-events@getEvents.Events"].joinQueue,
+    LeaveQueueRemote = game:GetService("ReplicatedStorage")["events-@easy-games/lobby:shared/event/lobby-events@getEvents.Events"].leaveQueue,
+}
+
+
+function funcs:getQueueTitles() 
+    local t = {}
+    for i,v in next, modules.QueueMeta do 
+        local title = v.title
+        if string.lower(i) == 'bedwars_voice_chat' then 
+            title = title.." (VC)" 
+        end
+        if v.rankCategory then
+            title = title .. " " .. v.eventText
+        end
+        t[i] = title
+    end
+    return t
+end
+
+function funcs:getQueueFromTitle(title) 
+    for i,v in next, funcs:getQueueTitles() do 
+        if title == v then  
+            return i
+        end
+    end
+end
+
+do 
+    local queueTick
+    local AutoQueueDelay, AutoQueueSelection = {}, {}
+    local AutoQueue = {}; AutoQueue = GuiLibrary.Objects.utilitiesWindow.API.CreateOptionsButton({
+        Name = "autoqueue",
+        Function = function(callback) 
+            if callback then 
+
+                coroutine.wrap(function() 
+                    
+                    task.wait(AutoQueueDelay.Value)
+
+                    queueTick = tick()
+                    remotes.JoinQueueRemote:FireServer({queueType = funcs:getQueueFromTitle(AutoQueueSelection.Value)})
+
+                    repeat task.wait(.1)
+                        if tick() - queueTick > 30 then 
+                            remotes.LeaveQueueRemote:FireServer()
+                            task.wait(0.5)
+                            remotes.JoinQueueRemote:FireServer({queueType = funcs:getQueueFromTitle(AutoQueueSelection.Value)})
+                            queueTick = tick()
+                        end
+                    until not AutoQueue.Enabled
+
+                end)()
+
+            else
+                remotes.LeaveQueueRemote:FireServer()
+            end
+        end,
+    })
+    AutoQueueSelection = AutoQueue.CreateDropdown({
+        Name = "queue",
+        List = funcs:getQueueTitles(),
+        Function = function(value) 
+            if AutoQueue.Enabled then
+                AutoQueue.Toggle()
+                AutoQueue.Toggle()
+            end
+        end,
+    })
+    AutoQueueDelay = AutoQueue.CreateSlider({
+        Name = "delay",
+        Value = 0,
+        Min = 0,
+        Max = 30,
+        Round = 0,
+        Function = function() end
+    })
+
+end
