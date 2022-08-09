@@ -8,11 +8,14 @@ local lplr = Players.LocalPlayer
 local entity, GuiLibrary, funcs = engoware.entity, engoware.GuiLibrary, engoware.funcs
 local mouse = lplr:GetMouse()
 
+getrenv().PluginManager = function() return {CreatePlugin = function() return {Deactivate = function() end} end} end 
+
 local modules = {
     InteractInterface = require(game:GetService("ReplicatedStorage").Client.Abstracts.Interface.Interact),
     Bullets = require(game:GetService("ReplicatedStorage").Client.Libraries.Bullets),
     Framework = require(game:GetService("ReplicatedFirst").Framework),
-    Character = require(game:GetService("ReplicatedStorage").Client.Abstracts.Cameras.Character)
+    Character = require(game:GetService("ReplicatedStorage").Client.Abstracts.Cameras.Character),
+    Cameras = require(game:GetService("ReplicatedStorage").Client.Libraries.Cameras),
 }
 
 engoware.modules = modules
@@ -21,32 +24,34 @@ if not modules.Framework:IsLoaded() then
     modules.Framework:WaitForLoaded()
 end
 
-local isTeleporting = false
 function funcs:tpBypass(cframe, d)
     if not entity.isAlive then 
         return
     end
-    --[[
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Teleport started...", Duration = 2})
-    entity.character.HumanoidRootPart.Anchored = true
-    funcs:bindToHeartbeat("TPBYPASS", function() 
-        sethiddenproperty(entity.character.HumanoidRootPart, "NetworkIsSleeping", true)
-    end)
-    task.wait(.2)
-    entity.character.HumanoidRootPart.CFrame = cframe
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Waiting to prevent lagback...", Duration = 6})
-    task.wait(d)
-    entity.character.HumanoidRootPart.Anchored = false
-    funcs:unbindFromHeartbeat("TPBYPASS")
-    task.wait(.2)
-    local Distance = (entity.character.HumanoidRootPart.CFrame.p - cframe.p).Magnitude
-    if Distance > 10 then 
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Teleport failed!", Duration = 2})
-    else
-        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Teleport success!", Duration = 2})
+
+    if GuiLibrary.Objects.acdisablerOptionsButton == nil or GuiLibrary.Objects.acdisablerOptionsButton.Enabled == false then
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Teleport started...", Duration = 2})
+        entity.character.HumanoidRootPart.Anchored = true
+        funcs:bindToHeartbeat("TPBYPASS", function() 
+            sethiddenproperty(entity.character.HumanoidRootPart, "NetworkIsSleeping", true)
+        end)
+        task.wait(.2)
+        entity.character.HumanoidRootPart.CFrame = cframe
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Waiting to prevent lagback...", Duration = 6})
+        task.wait(d)
+        entity.character.HumanoidRootPart.Anchored = false
+        funcs:unbindFromHeartbeat("TPBYPASS")
+        task.wait(.2)
+        local Distance = (entity.character.HumanoidRootPart.CFrame.p - cframe.p).Magnitude
+        if Distance > 10 then 
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Teleport failed!", Duration = 2})
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "TPBypass", Text = "Teleport success!", Duration = 2})
+        end
+
+        return not (Distance > 10)
     end
 
-    return not (Distance > 10)]]
     entity.character.HumanoidRootPart.CFrame = cframe
     return true;
 end
@@ -246,6 +251,10 @@ do
 
                     local Speed = FlyValue.Value
                     local Humanoid = entity.character.Humanoid
+                    if not Humanoid then 
+                        return
+                    end
+
                     local RootPart = entity.character.HumanoidRootPart
                     local MoveDirection = Humanoid.MoveDirection
                     local Velocity = RootPart.Velocity
@@ -526,7 +535,9 @@ do
 end
 
 do 
-    debug.setupvalue(modules.Framework.Libraries.Network.Send, 6, function() end)   
+    pcall(function()
+        debug.setupvalue(modules.Framework.Libraries.Network.Send, 6, function() end)   
+    end)
 
     local BanRemotes = {
         ["Statistic Report"] = true,
@@ -592,7 +603,9 @@ do
 
                 Worker:add(function() 
                     for i,v in next, OldAssets do 
-                        v.Parent = game:GetService("Lighting")
+                        pcall(function()
+                            v.Parent = game:GetService("Lighting")
+                        end)
                     end
                     game:GetService("Lighting").FogEnd = OldFogEnd
                 end)
@@ -820,6 +833,12 @@ do
                 coroutine.wrap(function()
                     repeat
                         game:GetService("RunService").Stepped:Wait()
+
+                        local mousePos = UIS:GetMouseLocation()
+                        local guiObjs = lplr.PlayerGui:GetGuiObjectsAtPosition(mousePos.X, mousePos.Y)
+                        if guiObjs or #guiObjs > 0 then 
+                            continue;
+                        end
                         if UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or not (AimbotMode.Value == 'hold') then 
                             local Part = (TargetPart.Value == 'head' and 'Head' or 'RootPart')
                             local nearestEntity = funcs:getClosestEntityToMouse(AimbotFOV.Value, false, true, {
@@ -932,5 +951,80 @@ do
                 FireRate.Toggle()
             end
         end
+    })
+end
+
+do 
+    local BotFOV={}
+    local Triggerbot={};
+    Triggerbot = GuiLibrary.Objects.combatWindow.API.CreateOptionsButton({
+        Name = "trggerbot",
+        Function = function(callback)   
+            if callback then 
+                coroutine.wrap(function()
+                    repeat
+                        task.wait()
+
+                        local char = modules.Framework.Classes.Players and modules.Framework.Classes.Players.get()
+                        if not char or not char.Character then 
+                            continue
+                        end
+
+                        char = char.Character
+                        if not char.Instance then 
+                            continue
+                        end
+
+                        local itemtab = char.EquippedItem
+                        if not itemtab or not itemtab.Type == 'Firearm' or not itemtab.Attachments or not itemtab.Attachments.Ammo then 
+                            continue
+                        end
+
+                        if itemtab.Attachments.Ammo.WorkingAmount <= 0 then 
+                            itemtab:OnReload(char)
+                            continue
+                        end
+
+                        local item = char.Instance:FindFirstChild("Equipped") and char.Instance:FindFirstChild("Equipped"):FindFirstChild(char.EquippedItem.Name)
+                        local cam = modules.Cameras:GetCamera("Character")
+                        if not cam then 
+                            continue
+                        end
+
+                        --local muzzlePos = item:FindFirstChild("Muzzle") and item:FindFirstChild("Muzzle").CFrame.p
+
+                        local nearestEntity = funcs:getClosestEntityToMouse(BotFOV.Value, false, true, {
+                            Ignore = {workspace.Effects, workspace.Sounds, funcs:getAccessories(), workspace.Map:FindFirstChild("Sea")},  
+                            Origin = workspace.CurrentCamera.CFrame.p,
+                            TargetPart = "Head",
+                            MaxDist = itemtab.FireConfig.DamageFallOff.StartsAt,
+                            SkipVisible = false,
+                        })
+                        if not nearestEntity then
+                            continue
+                        end
+
+                        local Inputting = true
+                        itemtab:OnUse(setmetatable({}, {__index = function(t, k)
+                            if k == "UseItemInput" then 
+                                return Inputting;
+                            end
+                            return char[k] 
+                        end}))
+                        Inputting = false
+                        --modules.Bullets:Fire(char, cam, itemtab, muzzlePos, CFrame.lookAt(workspace.CurrentCamera.CFrame.p, nearestEntity.RootPart.CFrame.p).LookVector)
+                        --itemtab.Attachments.Ammo.WorkingAmount = itemtab.Attachments.Ammo.WorkingAmount - 1
+                    until (not Triggerbot.Enabled)
+                end)()
+            end
+        end,
+    })
+    BotFOV = Triggerbot.CreateSlider({
+        Name = "fov",
+        Min = 0,
+        Max = 1200,
+        Default = 1200,
+        Round = 0,
+        Function = function(value) end
     })
 end

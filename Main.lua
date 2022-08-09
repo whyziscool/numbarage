@@ -169,7 +169,7 @@ local funcs = {}; do
             for i,v in next, entity.entityList do 
                 if (v.Targetable or not teamCheck) and funcs:isTargetable(v.Player) then 
                     local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(v[visTable.TargetPart].Position)
-                    if not Visible then 
+                    if (not visTable.SkipVisible) and (not Visible) then 
                         continue
                     end
 
@@ -179,6 +179,11 @@ local funcs = {}; do
                     local Ray = workspace:Raycast(visTable.Origin, v[visTable.TargetPart].Position - visTable.Origin, Params)
                     local AreVisible = Ray and Ray.Instance == nil or not Ray
                     if visCheck and (not AreVisible) then
+                        continue
+                    end
+
+                    local dist2 = (entity.character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
+                    if visTable.MaxDist and dist2 > (visTable.MaxDist) then
                         continue
                     end
 
