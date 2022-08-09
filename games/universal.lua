@@ -359,18 +359,20 @@ do
                         ESPInner.Filled = false
 
                         local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(v.RootPart.Position)
-                        local HeadPosition, HeadVisible = workspace.CurrentCamera:WorldToViewportPoint(v.Head.Position + Vector3.new(0, 0.5, 0))
-                        local LegPosition, LegVisible = workspace.CurrentCamera:WorldToViewportPoint(v.RootPart.Position - Vector3.new(0, 3.5, 0))
                         if Visible then 
-                            ESPInner.Size = Vector2.new(1500 / Position.Z, HeadPosition.Y - LegPosition.Y)
+                            local SizeX = 1000 / Position.Z
+                            local SizeY = -(2000 / Position.Z)
+                            ESPInner.Size = Vector2.new(SizeX, SizeY)
+                            ESPOutline.Size = Vector2.new(SizeX, SizeY)
+
                             ESPInner.Position = Vector2.new(Position.X - ESPOutline.Size.X / 2, Position.Y - ESPOutline.Size.Y / 2)
-                            ESPOutline.Size = Vector2.new(1500 / Position.Z, HeadPosition.Y - LegPosition.Y)
                             ESPOutline.Position = Vector2.new(Position.X - ESPOutline.Size.X / 2, Position.Y - ESPOutline.Size.Y / 2)
-                            ESPOutline.Visible = true
+
                             ESPInner.Visible = true
+                            ESPOutline.Visible = true
                         else
-                            ESPOutline.Visible = false
                             ESPInner.Visible = false
+                            ESPOutline.Visible = false
                         end
                     end 
                 end)

@@ -26,13 +26,15 @@ getmetatable(Client).Get = function(self, RemoteName)
     if RemoteName == remotes.SwordRemote then 
         local old = Client_Get(self, RemoteName)
         return {
-            CallServer = function(self, tab) 
+            SendToServer = function(self, tab) 
                 if Hitboxes.Enabled then 
-                    local mag = (tab.validate.selfPosition.value - tab.validate.targetPosition.value).magnitude
-                    local newres = modules.HashVector(tab.validate.selfPosition.value + (mag > 14.4 and (CFrame.lookAt(tab.validate.selfPosition.value, tab.validate.targetPosition.value).LookVector * 4) or Vector3.new(0, 0, 0)))
-                    tab.validate.selfPosition = newres
+                    pcall(function()
+                        local mag = (tab.validate.selfPosition.value - tab.validate.targetPosition.value).magnitude
+                        local newres = modules.HashVector(tab.validate.selfPosition.value + (mag > 14.4 and (CFrame.lookAt(tab.validate.selfPosition.value, tab.validate.targetPosition.value).LookVector * 4) or Vector3.new(0, 0, 0)))
+                        tab.validate.selfPosition = newres
+                    end)
                 end
-                return old:CallServer(tab)
+                return old:SendToServer(tab)
             end,
             instance = old.instance,
         }
@@ -118,6 +120,7 @@ remotes = {
     DamageBlock = game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"].net.out["_NetManaged"].DamageBlock,
     ItemDropRemote = funcs:getRemote(debug.getconstants(modules.ItemDropController.dropItemInHand)),
     ItemPickupRemote = funcs:getRemote(debug.getconstants(modules.ItemDropController.checkForPickup)),
+    PaintRemote = funcs:getRemote(debug.getconstants(KnitClient.Controllers.PaintShotgunController.fire))
 }
 engoware.modules = modules
 engoware.remotes = remotes
@@ -322,13 +325,29 @@ do
     local KillauraMaxDistance = {}
     local KillauraSort = {}
     local KillauraShowTarget = {}
+    local KillauraMulti = {}
     local HitRemote = Client:Get(remotes.SwordRemote)
     local Killaura = {}; Killaura = GuiLibrary.Objects.combatWindow.API.CreateOptionsButton({
         Name = "killaura",
         Function = function(callback) 
             if callback then 
                 coroutine.wrap(function() 
-                    repeat task.wait()
+                    repeat game:GetService("RunService").Stepped:Wait()
+                        if KillauraMulti.Enabled then 
+                            local Targets = funcs:getSortedEntities(KillauraMaxDistance.Value, KillauraMaxTargets.Value, true, KillauraSortFunctions[KillauraSort.Value])
+                            for i, Target in next, Targets do
+                                local selfpos = entity.character.HumanoidRootPart.Position
+                                local newpos = Target.RootPart.Position
+                                modules.Client:Get(remotes.PaintRemote):SendToServer(selfpos, CFrame.lookAt(selfpos, newpos).LookVector)
+                            end
+                        end
+                    until (not Killaura.Enabled)
+                end)()
+                coroutine.wrap(function() 
+                    repeat game:GetService("RunService").Stepped:Wait()
+                        if not (Killaura.Enabled) then
+                            continue
+                        end
 
                         if not entity.isAlive then 
                             continue
@@ -341,7 +360,7 @@ do
 
                             local selfcheck = entity.character.HumanoidRootPart.Position - (entity.character.HumanoidRootPart.Velocity * 0.163)
                             local magnitude = (selfcheck - (Target.HumanoidRootPart.Position + (Target.HumanoidRootPart.Velocity * 0.05))).Magnitude
-                            if (magnitude > 17.5) then 
+                            if (magnitude > 18) then 
                                 continue 
                             end
 
@@ -354,16 +373,18 @@ do
 
                             modules.SwordController.lastAttack = modules.SwordController.lastAttack or 0
                             local swordMeta = modules.GetItemMeta(sword.tool.Name)
-                            if (tick() - modules.SwordController.lastAttack) < swordMeta.sword.attackSpeed then 
+                            if (workspace:GetServerTimeNow() - modules.SwordController.lastAttack) < swordMeta.sword.attackSpeed then 
                                 continue
                             end
 
-                            local ping = math.floor(tonumber(game:GetService("Stats"):FindFirstChild("PerformanceStats").Ping:GetValue()))
-                            modules.SwordController.lastAttack = tick() + (ping > 120 and -0.08 or 0)
+                            modules.SwordController:playSwordEffect(swordMeta)
 
+                            local ping = math.floor(tonumber(game:GetService("Stats"):FindFirstChild("PerformanceStats").Ping:GetValue()))
+                            modules.SwordController.lastAttack = workspace:GetServerTimeNow() - 0.11
+
+                            
                             coroutine.wrap(function()
-                                local success = HitRemote:CallServer({
-                                    bye = "lex",
+                                HitRemote:SendToServer({
                                     weapon = sword.tool,
                                     entityInstance = Target.Character,
                                     validate = {
@@ -376,16 +397,17 @@ do
                                     }, 
                                     chargedAttack = {chargeRatio = 1},
                                 })
-                                modules.SwordController.lastAttack = success and tick() + (ping > 120 and -0.08 or 0)
-                                if success then 
-                                    modules.SwordController:playSwordEffect(swordMeta)
-                                end
                             end)()
 
                         end
 
                         for i,v in next, KillauraBoxes do 
-                            v.Adornee = Attacked[i]
+                            v.Adornee = KillauraShowTarget.Enabled and Attacked[i] or nil
+                            if v.Adornee then
+                                local cf = v.Adornee.CFrame
+                                local x,y,z = cf:ToEulerAnglesXYZ()
+                                v.CFrame = CFrame.new() * CFrame.Angles(-x,-y,-z)
+                            end
                         end
 
                     until not Killaura.Enabled
@@ -397,6 +419,11 @@ do
             end
         end
     })
+    KillauraMulti = Killaura.CreateToggle({
+        Name = "multi",
+        Default = true,
+        Function = function() end,
+    })
     KillauraSort = Killaura.CreateDropdown({
         Name = "sort",
         List = {"distance", "health", "smart", "power",},
@@ -406,7 +433,9 @@ do
     KillauraShowTarget = Killaura.CreateToggle({
         Name = "show target",
         Default = true,
-        Function = function() end,
+        Function = function() 
+            
+        end,
     })
     KillauraMaxTargets = Killaura.CreateSlider({
         Name = "max targets",
@@ -568,6 +597,10 @@ do
                                 end
 
                                 if not modules.BlockEngine:isBlockBreakable({blockPosition = modules.BlockEngine:getBlockPosition(v.Position)}, lplr) then
+                                    continue
+                                end
+
+                                if not v or not v.Parent then 
                                     continue
                                 end
                                 
