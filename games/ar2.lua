@@ -16,6 +16,10 @@ local modules = {
     Framework = require(game:GetService("ReplicatedFirst").Framework),
     Character = require(game:GetService("ReplicatedStorage").Client.Abstracts.Cameras.Character),
     Cameras = require(game:GetService("ReplicatedStorage").Client.Libraries.Cameras),
+    Raycasting = require(game:GetService("ReplicatedStorage").Client.Libraries.Raycasting),
+    Creator = require(game:GetService("ReplicatedStorage").Client.Abstracts.Interface.MainMenuClasses.TabClasses.Creator),
+    CreatorData = require(game:GetService("ReplicatedStorage").Client.Configs.CreatorData),
+    Firearm = require(game:GetService("ReplicatedStorage").Client.Abstracts.ItemInitializers.Firearm),
 }
 
 engoware.modules = modules
@@ -492,43 +496,47 @@ end
 do 
     local Worker = funcs:newWorker()
     local DisableZombies = {};
-    DisableZombies = GuiLibrary.Objects.utilitiesWindow.API.CreateOptionsButton({
-        Name = "nozombieai",
+    DisableZombies = GuiLibrary.Objects.exploitsWindow.API.CreateOptionsButton({
+        Name = "zombiecollector",
         Function = function(callback) 
             if callback then 
                 coroutine.wrap(function()
                     local mobs = workspace:WaitForChild("Zombies"):WaitForChild("Mobs")
-                    Worker:add(mobs.ChildAdded:Connect(function(child) 
-                        local HRP = child:WaitForChild("HumanoidRootPart")
-                        if HRP then
-                            HRP.Anchored = true
-                            Worker:add(HRP:GetPropertyChangedSignal("Anchored"):Connect(function()
-                                HRP.Anchored = true
-                            end))
-                        end
-                    end))
-                    for i,v in next, mobs:GetChildren() do 
-                        local HRP = v:WaitForChild("HumanoidRootPart")
-                        if HRP then
-                            HRP.Anchored = true
-                            Worker:add(HRP:GetPropertyChangedSignal("Anchored"):Connect(function()
-                                HRP.Anchored = true
-                            end))
-                        end
-                    end
-                    Worker:add(function()
-                        for i,v in next, mobs:GetChildren() do 
-                            local HRP = v:WaitForChild("HumanoidRootPart")
-                            if HRP then
-                                HRP.Anchored = false
+                    funcs:bindToRenderStepped("zombiehold", function(dt)
+                        for _,v in pairs(mobs:GetChildren()) do
+                            if not v.PrimaryPart then 
+                                continue
                             end
+
+                            if (not isnetworkowner) or (not isnetworkowner(v.PrimaryPart)) then 
+                                continue
+                            end
+                            
+                            v.PrimaryPart.CFrame = entity.character.HumanoidRootPart.CFrame + Vector3.new(0, 7.5, 0)
+                            v.PrimaryPart.Velocity = Vector3.zero
                         end
                     end)
                 end)()
             else
-                coroutine.wrap(function()
-                    Worker:clean()
-                end)()
+                funcs:unbindFromRenderStepped("zombiehold")
+            end
+        end
+    })
+end
+
+do
+    local old
+    local AlwaysShoot = {};
+    AlwaysShoot = GuiLibrary.Objects.exploitsWindow.API.CreateOptionsButton({
+        Name = "alwaysallowshoot",
+        Function = function(callback) 
+            if callback then 
+                old = debug.getupvalue(modules.Firearm, 7)
+                debug.setupvalue(modules.Firearm, 7, function(...)
+                    return true
+                end)
+            else
+                debug.setupvalue(modules.Firearm, 7, old)
             end
         end
     })
@@ -552,6 +560,8 @@ do
         ["Sync Near Chunk Loot"] = true,
         ["Character Config Resync"] = true,
         ["Animator State Desync Check"] = true,
+        ["Character Humanoid Update"] = true,
+        ["Character Root Update"] = true,
     }
 
     local NoFall = {};
@@ -566,12 +576,43 @@ do
         Function = function(callback) end
     })
 
+    --[[
+    local AlwaysWalk = {};
+    AlwaysWalk = GuiLibrary.Objects.utilitiesWindow.API.CreateOptionsButton({
+        Name = "alwayswalk",
+        Function = function(callback) 
+            if callback then 
+                local plrs = modules.Framework.Classes.Players
+                local plr = plrs and plrs.get()
+                if not plr then 
+                
+                end
+                plr.CharacterAdded:Connect(function(char)
+                    if not char then 
+                        return
+                    end
+
+                    local oldmt = getmetatable(char)
+                    setmetatable(char, {__newindex = function(t,k,v) 
+                        if k == "MoveState" then 
+                            rawset(t, k, "Walking")
+                            return
+                        end
+                        t[k] = v
+                    end})
+                end)
+            end
+        end
+    })]]
+
     local old = modules.Framework.Libraries.Network.Send
     modules.Framework.Libraries.Network.Send = function(Self, Name, ...)
-        if Name == "Set Character State" and NoFall.Enabled then
+        if Name == "Set Character State" then
             for i,v in next, ({...})[1] do 
                 if v[1] == "Falling" then 
-                    v[1] = "Walking"
+                    if NoFall.Enabled then
+                        v[1] = "Walking"
+                    end
                 end
             end
         end
@@ -958,7 +999,7 @@ do
     local BotFOV={}
     local Triggerbot={};
     Triggerbot = GuiLibrary.Objects.combatWindow.API.CreateOptionsButton({
-        Name = "trggerbot",
+        Name = "triggerbot",
         Function = function(callback)   
             if callback then 
                 coroutine.wrap(function()
@@ -991,27 +1032,40 @@ do
                             continue
                         end
 
-                        --local muzzlePos = item:FindFirstChild("Muzzle") and item:FindFirstChild("Muzzle").CFrame.p
+                        local muzzlePos = item:FindFirstChild("Muzzle") and item:FindFirstChild("Muzzle").CFrame.p or workspace.CurrentCamera.CFrame.p
+
+                        local dist = itemtab.FireConfig.DamageFallOff.StartsAt
+                        if dist <= 0 then
+                            dist = itemtab.FireConfig.DamageFallOff.LowestAt * itemtab.FireConfig.DamageFallOff.FinalMod
+                        end
 
                         local nearestEntity = funcs:getClosestEntityToMouse(BotFOV.Value, false, true, {
                             Ignore = {workspace.Effects, workspace.Sounds, funcs:getAccessories(), workspace.Map:FindFirstChild("Sea")},  
                             Origin = workspace.CurrentCamera.CFrame.p,
                             TargetPart = "Head",
-                            MaxDist = itemtab.FireConfig.DamageFallOff.StartsAt,
+                            MaxDist = dist,
                             SkipVisible = false,
+                            Checks = {function(ori, dir) 
+                                local castLocalBullet = debug.getupvalue(modules.Bullets.Fire, 4)
+                                local hitPart, hitPos, hitNormal, rayTable, distance = castLocalBullet(char, itemtab, muzzlePos, dir)
+                                if modules.Raycasting:IsHitCharacter(hitPart) then 
+                                    return true
+                                end
+                            end}
                         })
+                        
                         if not nearestEntity then
                             continue
                         end
 
-                        local Inputting = true
+                        local Inputting = 0
                         itemtab:OnUse(setmetatable({}, {__index = function(t, k)
-                            if k == "UseItemInput" then 
-                                return Inputting;
+                            if k == "UseItemInput" then
+                                Inputting = Inputting + 1
+                                return Inputting < 3
                             end
                             return char[k] 
                         end}))
-                        Inputting = false
                         --modules.Bullets:Fire(char, cam, itemtab, muzzlePos, CFrame.lookAt(workspace.CurrentCamera.CFrame.p, nearestEntity.RootPart.CFrame.p).LookVector)
                         --itemtab.Attachments.Ammo.WorkingAmount = itemtab.Attachments.Ammo.WorkingAmount - 1
                     until (not Triggerbot.Enabled)

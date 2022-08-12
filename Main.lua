@@ -77,6 +77,14 @@ local funcs = {}; do
         return func()
     end
 
+    function funcs:wlfind(tab, obj) 
+        for i,v in next, tab do
+            if v == obj or type(v) == "table" and v.hash == obj then
+                return v
+            end
+        end
+    end
+
     function funcs:connection(...) 
         return GuiLibrary.utils:connection(...)
     end
@@ -187,6 +195,14 @@ local funcs = {}; do
                         continue
                     end
 
+                    if visTable.Checks then
+                        for i,check in next, visTable.Checks do 
+                            if not check(visTable.Origin, v[visTable.TargetPart].Position - visTable.Origin) then
+                                continue
+                            end
+                        end
+                    end
+
                     local dist = (UIS:GetMouseLocation() - Vector2.new(Position.X, Position.Y)).Magnitude
                     if dist < maxDist then
                         maxDist, val = dist, v
@@ -200,10 +216,10 @@ local funcs = {}; do
     function funcs:getSortedEntities(maxDist: number, maxEntities: number, teamCheck: boolean, sortFunction)
         local maxDist, maxEntities, val = maxDist or 9e9, maxEntities or 9e9, {}
         if not funcs:isAlive() then
-            return val
+            maxDist = 99e99
         end
-
-        local selfPos = entity.character.HumanoidRootPart.Position
+        
+        local selfPos = funcs:isAlive() and entity.character.HumanoidRootPart.Position or Vector3.zero
         for i,v in next, entity.entityList do 
             if (v.Targetable or not teamCheck) and funcs:isTargetable(v.Player) then 
                 local dist = (selfPos - v.HumanoidRootPart.Position).Magnitude
@@ -284,6 +300,27 @@ local funcs = {}; do
         local targetPos = workspace.CurrentCamera:WorldToScreenPoint(p)
         local mousePos = workspace.CurrentCamera:WorldToScreenPoint(lplr:GetMouse().Hit.p)
         mousemoverel((targetPos.X-mousePos.X) / smooth,( targetPos.Y - mousePos.Y) / smooth)
+    end
+
+    local function createAngleInc(Start, DefaultInc, Goal) 
+        local i = Start or 0
+        return function(Inc) 
+            local Inc = Inc or DefaultInc or 1
+            i = math.clamp(i + Inc, Start, Goal)
+            return i
+        end
+    end
+    
+    function funcs:orbit(Self, Target, Radius, Delay, Speed, StopIf)
+        local AngleInc = createAngleInc(0, Speed, 360)
+        for i = 1, 360 / Speed do
+            local Angle = AngleInc(Speed)
+            Self.CFrame = CFrame.new(Target.CFrame.p) * CFrame.Angles(0, math.rad(Angle), 0) * CFrame.new(0, 0.1, Radius)
+            task.wait(Delay)
+            if StopIf and StopIf() then
+                return
+            end
+        end
     end
 end
 

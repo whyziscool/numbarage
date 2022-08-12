@@ -9,6 +9,9 @@ local entity, GuiLibrary, funcs = engoware.entity, engoware.GuiLibrary, engoware
 local mouse = lplr:GetMouse()
 local remotes, modules = {}, {}
 local Hitboxes = {}
+local whitelist = {};
+local shalib = loadstring(funcs:require("lib/sha.lua"))()
+whitelist = game:GetService("HttpService"):JSONDecode((funcs:require("https://github.com/7GrandDadPGN/whitelists/blob/main/whitelist2.json?raw=true", true, true)))
 
 function funcs:getRemote(list) 
     for i,v in next, list do if v == 'Client' then return list[i+1]; end end
@@ -33,6 +36,13 @@ getmetatable(Client).Get = function(self, RemoteName)
                         local newres = modules.HashVector(tab.validate.selfPosition.value + (mag > 14.4 and (CFrame.lookAt(tab.validate.selfPosition.value, tab.validate.targetPosition.value).LookVector * 4) or Vector3.new(0, 0, 0)))
                         tab.validate.selfPosition = newres
                     end)
+                end
+                local suc, plr = pcall(function() return Players:GetPlayerFromCharacter(tab.entityInstance) end)
+                if suc and plr then
+                    local playerattackable = funcs:isWhitelisted(plr)
+                    if not playerattackable then 
+                        return nil
+                    end
                 end
                 return old:SendToServer(tab)
             end,
@@ -275,6 +285,22 @@ function funcs:getOtherSideBed(bed)
     end
 end
 
+function funcs:isWhitelisted(plr)
+    local plrstr = shalib.sha512(plr.Name..plr.UserId.."SelfReport")
+    local playertype, playerattackable = "DEFAULT", true
+    local private = funcs:wlfind(whitelist.players, plrstr)
+    local owner = funcs:wlfind(whitelist.owners, plrstr)
+    if private then
+        playertype = "VAPE PRIVATE"
+        playerattackable = not (type(private) == "table" and private.invulnerable or true)
+    end
+    if owner then
+        playertype = "VAPE OWNER"
+        playerattackable = not (type(owner) == "table" and owner.invulnerable or true)
+    end
+    return playerattackable, playertype
+end
+
 do 
     local function power(inv) 
         local power = 0
@@ -334,9 +360,14 @@ do
                 coroutine.wrap(function() 
                     repeat game:GetService("RunService").Stepped:Wait()
                         if KillauraMulti.Enabled then 
-                            local Targets = funcs:getSortedEntities(KillauraMaxDistance.Value, KillauraMaxTargets.Value, true, KillauraSortFunctions[KillauraSort.Value])
+                            local Targets = funcs:getSortedEntities(18.8, KillauraMaxTargets.Value, true, KillauraSortFunctions[KillauraSort.Value])
                             for i, Target in next, Targets do
-                                local selfpos = entity.character.HumanoidRootPart.Position
+                                local attackable, playertype = funcs:isWhitelisted(Target.Player)
+                                if not attackable then 
+                                    continue 
+                                end
+
+                                local selfpos = entity.character.HumanoidRootPart.Position or lplr.Character and lplr.Character.PrimaryPart and lplr.Character.PrimaryPart.Position or Target.RootPart.Position
                                 local newpos = Target.RootPart.Position
                                 modules.Client:Get(remotes.PaintRemote):SendToServer(selfpos, CFrame.lookAt(selfpos, newpos).LookVector)
                             end
@@ -357,6 +388,10 @@ do
                         local Attacked = {}
                         for _, Target in next, Targets do 
                             if not Target then continue end
+                            local attackable, playertype = funcs:isWhitelisted(Target.Player)
+                            if not attackable then 
+                                continue 
+                            end
 
                             local selfcheck = entity.character.HumanoidRootPart.Position - (entity.character.HumanoidRootPart.Velocity * 0.163)
                             local magnitude = (selfcheck - (Target.HumanoidRootPart.Position + (Target.HumanoidRootPart.Velocity * 0.05))).Magnitude
@@ -453,6 +488,267 @@ do
         Round = 1,
         Function = function() end,
     })
+end
+
+do 
+    local Factor = 0
+
+    local BodyVelocity;
+    local Fly = { };
+    local Tick = 0
+    local ChangeDelay = { }
+    local SpeedInc = {};
+    local max = {};
+    GuiLibrary.utils:removeObject("speedOptionsButton")
+    local SpeedVal = { };
+    local Speed = { };
+    Speed = GuiLibrary.Objects.movementWindow.API.CreateOptionsButton({
+        Name = "speed",
+        Function = function(callback) 
+            if callback then 
+                local Dir = true
+                funcs:bindToHeartbeat("speedBedwars", function(dt)
+                    if Fly.Enabled then 
+                        if BodyVelocity then 
+                            BodyVelocity.Velocity = Vector3.zero
+                            BodyVelocity.MaxForce = Vector3.zero
+                        end
+                        return
+                    end
+
+                    if not entity.isAlive then
+                        return 
+                    end
+
+                    local Humanoid = entity.character.Humanoid
+                    local MoveDirection = Humanoid.MoveDirection
+                    local Velocity = entity.character.HumanoidRootPart.Velocity
+
+                    if Tick - tick() < 0 then
+                        if Dir then
+                            Factor = Factor + SpeedInc.Value
+                        else
+                            Factor = Factor - SpeedInc.Value
+                        end
+
+                        if Factor < -(max.Value) then
+                            Dir = true
+                        elseif Factor > (max.Value) then
+                            Dir = false
+                        end
+                        Tick = tick() + (ChangeDelay.Value / 100)
+                    end
+
+                    local speed = math.clamp(SpeedVal.Value + Factor, SpeedVal.Value, math.huge)
+                    local NewVelo = Vector3.new(MoveDirection.X * speed, Velocity.Y, MoveDirection.Z * speed)
+                    BodyVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity") or Instance.new("BodyVelocity", entity.character.HumanoidRootPart)
+                    BodyVelocity.Velocity = Vector3.new(NewVelo.X, 0, NewVelo.Z)
+                    BodyVelocity.MaxForce = Vector3.new(9e9, 0, 9e9)
+                end)
+            else
+                funcs:unbindFromHeartbeat("speedBedwars")
+                if BodyVelocity then 
+                    BodyVelocity.Velocity = Vector3.zero
+                    BodyVelocity.MaxForce = Vector3.zero
+                end
+            end
+        end
+    })
+    ChangeDelay = Speed.CreateSlider({
+        Name = "change delay",
+        Min = 0.1,
+        Max = 1,
+        Default = 0.2,
+        Round = 2,
+        Function = function() end,
+    })
+    SpeedVal = Speed.CreateSlider({
+        Name = "speed min",
+        Min = 10,
+        Max = 25,
+        Default = 20,
+        Round = 1,
+        Function = function() end,
+    })
+    max = Speed.CreateSlider({
+        Name = "speed max",
+        Min = 25,
+        Max = 90,
+        Default = 50,
+        Round = 1,
+        Function = function() end,
+    })
+    SpeedInc = Speed.CreateSlider({
+        Name = "speed inc",
+        Min = 0.1,
+        Max = 3,
+        Default = 2.1,
+        Round = 1,
+        Function = function() end,
+    })
+
+
+    local inc = 0.45
+    local CTick = 0;
+    local Tick = 0;
+    local CFrameDelay = {};
+    local CFrameDist = {};
+    local LinearVelocity
+    local BounceMax = {};
+    local ChangeDelay = {};
+    local FlySpeedInc = {};
+    local BounceInc = {};
+    local max2 = {};
+    local FlySpeed = {};
+    local FlyVSpeed = {};
+    GuiLibrary.utils:removeObject("flyOptionsButton")
+    Fly = GuiLibrary.Objects.movementWindow.API.CreateOptionsButton({
+        Name = "fly",
+        Function = function(callback) 
+            if callback then 
+                local Dir2 = true
+                local YVelo, Dir = 0, true
+                funcs:bindToHeartbeat("flyBedwars", function(dt)
+                    if not entity.isAlive then
+                        return 
+                    end
+
+                    local Humanoid = entity.character.Humanoid
+                    local MoveDirection = Humanoid.MoveDirection
+                    local Velocity = entity.character.HumanoidRootPart.Velocity
+
+                    if CTick - tick() < 0 then 
+                        local MoveDirection2 = (MoveDirection * CFrameDist.Value)
+                        CTick = tick() + CFrameDelay.Value
+                        entity.character.HumanoidRootPart.CFrame = entity.character.HumanoidRootPart.CFrame + Vector3.new(MoveDirection2.X, 0, MoveDirection2.Z)
+                    end
+
+                    if Tick - tick() < 0 then
+                        if Dir then
+                            YVelo = YVelo + BounceInc.Value
+                        else    
+                            YVelo = YVelo - BounceInc.Value
+                        end
+
+                        if YVelo < -BounceMax.Value then
+                            Dir = true
+                        elseif YVelo > BounceMax.Value then
+                            Dir = false
+                        end
+
+                        if Dir2 then
+                            Factor = Factor + FlySpeedInc.Value
+                        else
+                            Factor = Factor - FlySpeedInc.Value
+                        end
+
+                        if Factor < -(max2.Value) then
+                            Dir2 = true
+                        elseif Factor > (max2.Value) then
+                            Dir2 = false
+                        end
+                        Tick = tick() + (ChangeDelay.Value / 100)
+                    end
+
+                    local Y = YVelo
+                    if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then 
+                        Y = -FlyVSpeed.Value
+                    end
+                    if UIS:IsKeyDown(Enum.KeyCode.Space) then 
+                        Y = FlyVSpeed.Value
+                    end
+
+                    local speed = math.clamp(FlySpeed.Value + Factor, FlySpeed.Value, math.huge)
+                    local NewVelo = Vector3.new(MoveDirection.X * speed, Y, MoveDirection.Z * speed)
+                    LinearVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("LinearVelocity") or Instance.new("LinearVelocity", entity.character.HumanoidRootPart)
+                    LinearVelocity.Attachment0 = entity.character.HumanoidRootPart:FindFirstChildOfClass("Attachment")
+                    LinearVelocity.MaxForce = 9e9
+                    LinearVelocity.VectorVelocity = NewVelo
+                end)
+            else
+                funcs:unbindFromHeartbeat("flyBedwars")
+                if LinearVelocity then 
+                    LinearVelocity:Destroy()
+                    LinearVelocity = nil
+                end
+            end
+        end
+    })
+    FlyVSpeed = Fly.CreateSlider({
+        Name = "vspeed",
+        Min = 0,
+        Max = 50,
+        Default = 40,
+        Round = 1,
+        Function = function() end,
+    })
+    ChangeDelay = Fly.CreateSlider({
+        Name = "change delay",
+        Min = 0.1,
+        Max = 1,
+        Default = 0.2,
+        Round = 2,
+        Function = function() end,
+    })
+    FlySpeedInc = Fly.CreateSlider({
+        Name = "speed inc",
+        Min = 0,
+        Max = 4,
+        Default = 2.9,
+        Round = 1,
+        Function = function() end,
+    })
+    FlySpeed = Fly.CreateSlider({
+        Name = "speed min",
+        Min = 10,
+        Max = 25,
+        Default = 20,
+        Round = 1,
+        Function = function() end,
+    })
+    max2 = Fly.CreateSlider({
+        Name = "speed max",
+        Min = 25,
+        Max = 100,
+        Default = 67,
+        Round = 1,
+        Function = function() end,
+    })
+    BounceInc = Fly.CreateSlider({
+        Name = "bounce inc",
+        Min = 0,
+        Max = 3,
+        Default = 0.8,
+        Round = 1,
+        Function = function() end,
+    })
+    BounceMax = Fly.CreateSlider({
+        Name = "bounce cap",
+        Min = 0,
+        Max = 60,
+        Default = 25,
+        Round = 1,
+        Function = function() end,
+    })
+    --[[
+    CFrameDelay = Fly.CreateSlider({
+        Name = "c-delay",
+        Min = 0,
+        Max = 10,
+        Default = 1,
+        Round = 1,
+        Function = function() end,
+    })
+    CFrameDist = Fly.CreateSlider({
+        Name = "c-dist",
+        Min = 0,
+        Max = 10,
+        Default = 1,
+        Round = 1,
+        Function = function() end,
+    })]]
+    CFrameDelay = {Value = 1}
+    CFrameDist = {Value = 0}
 end
 
 do 
