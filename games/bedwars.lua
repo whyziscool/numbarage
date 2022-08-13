@@ -674,14 +674,6 @@ do
             end
         end
     })
-    FlyVSpeed = Fly.CreateSlider({
-        Name = "vspeed",
-        Min = 0,
-        Max = 50,
-        Default = 40,
-        Round = 1,
-        Function = function() end,
-    })
     ChangeDelay = Fly.CreateSlider({
         Name = "change delay",
         Min = 0.1,
@@ -727,6 +719,14 @@ do
         Min = 0,
         Max = 60,
         Default = 25,
+        Round = 1,
+        Function = function() end,
+    })
+    FlyVSpeed = Fly.CreateSlider({
+        Name = "vertical speed",
+        Min = 0,
+        Max = 50,
+        Default = 40,
         Round = 1,
         Function = function() end,
     })
