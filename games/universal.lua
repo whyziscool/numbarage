@@ -358,12 +358,14 @@ do
                         ESPInner.Transparency = 1
                         ESPInner.Filled = false
 
+
+                        local topPos, topVis = workspace.CurrentCamera:WorldToViewportPoint((CFrame.new(v.RootPart.Position, v.RootPart.Position + workspace.CurrentCamera.CFrame.LookVector) * CFrame.new(2, 3, 0)).p)
+                        local bottomPos, bottomVis = workspace.CurrentCamera:WorldToViewportPoint((CFrame.new(v.RootPart.Position, v.RootPart.Position + workspace.CurrentCamera.CFrame.LookVector) * CFrame.new(-2, -3.5, 0)).p)
                         local Position, Visible = workspace.CurrentCamera:WorldToViewportPoint(v.RootPart.Position)
-                        if Visible then 
-                            local SizeX = 1000 / Position.Z
-                            local SizeY = -(2000 / Position.Z)
-                            ESPInner.Size = Vector2.new(SizeX, SizeY)
-                            ESPOutline.Size = Vector2.new(SizeX, SizeY)
+                        if Visible or topVis or bottomVis then 
+                            local sizex, sizey = topPos.X - bottomPos.X, topPos.Y - bottomPos.Y
+                            ESPInner.Size = Vector2.new(sizex, sizey)
+                            ESPOutline.Size = Vector2.new(sizex, sizey)
 
                             ESPInner.Position = Vector2.new(Position.X - ESPOutline.Size.X / 2, Position.Y - ESPOutline.Size.Y / 2)
                             ESPOutline.Position = Vector2.new(Position.X - ESPOutline.Size.X / 2, Position.Y - ESPOutline.Size.Y / 2)
@@ -526,7 +528,7 @@ end
 do
     local function formatNametag(ent) 
         if not entity.isAlive then 
-            return ("[0] " .. ent.Player.Name .. "| %sHP"):format(ent.Humanoid.Health)
+            return ("[0] " .. ent.Player.Name .. "| %sHP"):format(math.round(ent.Humanoid.Health))
         end
         return string.format("[%s] %s | %sHP", 
         entity.character.HumanoidRootPart and tostring(math.round((ent.RootPart.Position - entity.character.HumanoidRootPart.Position).Magnitude)) or "N/A",
@@ -554,7 +556,9 @@ do
 
                     for _, v in next, entity.entityList do 
 
-                        if not funcs:isAlive(v.Player, true) then continue end
+                        if not funcs:isAlive(v.Player, true) then 
+                            continue 
+                        end
 
                         local Name = v.Player.Name
                         local NametagBG, NametagText

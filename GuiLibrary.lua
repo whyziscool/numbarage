@@ -155,6 +155,13 @@ local utils = {}; GuiLibrary.utils = utils do
             end)
         end)()
     end
+
+    function utils:updateScale(UIScale) 
+        local ViewportSize = workspace.CurrentCamera.ViewportSize
+        local X = ViewportSize.X / 1920
+        local Y = ViewportSize.Y / 1080
+        UIScale.Scale = math.clamp(X, 0.3, 2)
+    end
 end
 
 coroutine.wrap(function()
@@ -181,21 +188,29 @@ GuiLibrary.ButtonUpdate = ButtonUpdate
 
 local ScreenGui = Instance.new("ScreenGui")
 local ClickGUI = Instance.new("Frame")
+local UIScale = Instance.new("UIScale")
 ScreenGui.Name = "engoware"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ClickGUI.Name = "ClickGUI"
 ClickGUI.Parent = ScreenGui
 ClickGUI.BackgroundTransparency = 1
 ClickGUI.Size = UDim2.new(1, 0, 1, 0)
+UIScale.Parent = ScreenGui
 if syn then
     syn.protect_gui(ScreenGui)
 end
-if gethui then
+if gethui and (not KRNL_LOADED) then
     ScreenGui.Parent = gethui()
 else
     ScreenGui.Parent = game:GetService("CoreGui").RobloxGui
 end
 
+utils:updateScale(UIScale)
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+    utils:updateScale(UIScale)
+end)
+
+GuiLibrary.UIScale = UIScale
 GuiLibrary.ClickGUI = ClickGUI
 GuiLibrary.ScreenGui = ScreenGui
 function GuiLibrary.CreateWindow(args)
@@ -262,8 +277,8 @@ function GuiLibrary.CreateWindow(args)
 
     function windowapi.Update() 
         local size = UIListLayout.AbsoluteContentSize
-        ModuleContainer.Size = UDim2.new(0, 203, 0, size.Y)
-        Window.Size = UDim2.new(0, 203, 0, size.Y)
+        ModuleContainer.Size = UDim2.new(0, 203, 0, size.Y / UIScale.Scale)
+        Window.Size = UDim2.new(0, 203, 0, size.Y / UIScale.Scale)
     end
 
     utils:connection(UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(windowapi.Update))
@@ -301,6 +316,7 @@ function GuiLibrary.CreateWindow(args)
         Module.Text = ""
         Module.TextColor3 = Color3.fromRGB(255, 255, 255)
         Module.TextSize = 14.000
+        buttonapi.Instance = Module
         local Name_2 = Instance.new("TextLabel")
         Name_2.Name = "Name"
         Name_2.Parent = Module
@@ -333,13 +349,21 @@ function GuiLibrary.CreateWindow(args)
         Bind.Parent = ModuleChildrenContainer
         Bind.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
         Bind.BackgroundTransparency = 0.300
-        Bind.BorderColor3 = Color3.fromRGB(6, 6, 6)
+        Bind.BorderColor3 = Color3.fromRGB(100, 100, 100)
+        Bind.BorderSizePixel = 0
         Bind.LayoutOrder = 2
         Bind.Size = UDim2.new(0, 184, 0, 22)
         Bind.Font = Enum.Font.SourceSans
         Bind.Text = ""
         Bind.TextColor3 = Color3.fromRGB(0, 0, 0)
         Bind.TextSize = 14.000
+        utils:connection(Bind.MouseEnter:Connect(function()
+            Bind.BorderSizePixel = 1
+        end))
+        utils:connection(Bind.MouseLeave:Connect(function()
+            Bind.BorderSizePixel = 0
+        end))
+        Bind.AutoButtonColor = false
         local Name_3 = Instance.new("TextLabel")
         Name_3.Name = "Name"
         Name_3.Parent = Bind
@@ -396,9 +420,9 @@ function GuiLibrary.CreateWindow(args)
 
         function buttonapi.Update() 
             local size2 = UIListLayout_2.AbsoluteContentSize
-            ModuleChildrenContainer.Size = UDim2.new(0, 203, 0, size2.Y + 8)
+            ModuleChildrenContainer.Size = UDim2.new(0, 203, 0, (size2.Y + (8 * UIScale.Scale)) / UIScale.Scale )
             local size = UIListLayout_3.AbsoluteContentSize
-            ModuleOptionsContainer.Size = UDim2.new(0, 203, 0, size.Y)
+            ModuleOptionsContainer.Size = UDim2.new(0, 203, 0, size.Y / UIScale.Scale)
         end
         utils:connection(UIListLayout_3:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(buttonapi.Update))
         utils:connection(UIListLayout_2:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(buttonapi.Update))
@@ -443,7 +467,7 @@ function GuiLibrary.CreateWindow(args)
 
         function buttonapi.CreateToggle(args) 
             local toggleapi = {Enabled = args.Default or false}
-            local Toggle = Instance.new("Frame")
+            local Toggle = Instance.new("TextButton")
             Toggle.Name = "Toggle"
             Toggle.Parent = ModuleOptionsContainer
             Toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -451,6 +475,9 @@ function GuiLibrary.CreateWindow(args)
             Toggle.BorderSizePixel = 0
             Toggle.Position = UDim2.new(0, 0, 2.75755095, 0)
             Toggle.Size = UDim2.new(0, 203, 0, 24)
+            Toggle.Text = ""
+            Toggle.AutoButtonColor = false
+            toggleapi.Instance = Toggle
             local Name_7 = Instance.new("TextLabel")
             Name_7.Name = "Name"
             Name_7.Parent = Toggle
@@ -464,7 +491,7 @@ function GuiLibrary.CreateWindow(args)
             Name_7.TextColor3 = Color3.fromRGB(255, 255, 255)
             Name_7.TextSize = 14.000
             Name_7.TextXAlignment = Enum.TextXAlignment.Left
-            local Toggle_2 = Instance.new("Frame")
+            local Toggle_2 = Instance.new("TextButton")
             Toggle_2.Name = "Toggle"
             Toggle_2.Parent = Toggle
             Toggle_2.AnchorPoint = Vector2.new(0, 0.5)
@@ -473,6 +500,9 @@ function GuiLibrary.CreateWindow(args)
             Toggle_2.BorderSizePixel = 0
             Toggle_2.Position = UDim2.new(0, 170, 0, 14)
             Toggle_2.Size = UDim2.new(0, 21, 0, 10)
+            Toggle_2.Text = ""
+            Toggle_2.BorderColor3 = Color3.fromRGB(100, 100, 100)
+            Toggle_2.AutoButtonColor = false
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "ToggleButton"
             ToggleButton.Parent = Toggle_2
@@ -502,6 +532,16 @@ function GuiLibrary.CreateWindow(args)
                 end
             end
             utils:connection(ToggleButton.MouseButton1Click:Connect(toggleapi.Toggle))
+            utils:connection(Toggle_2.MouseButton1Click:Connect(toggleapi.Toggle))
+            utils:connection(Toggle.MouseButton1Click:Connect(toggleapi.Toggle))
+
+            utils:connection(Toggle.MouseEnter:Connect(function()
+                Toggle_2.BorderSizePixel = 1
+            end))
+
+            utils:connection(Toggle.MouseLeave:Connect(function()
+                Toggle_2.BorderSizePixel = 0
+            end))
 
             if (args.Default == true) then 
                 toggleapi.Toggle()
@@ -531,6 +571,7 @@ function GuiLibrary.CreateWindow(args)
             Slider.BorderSizePixel = 0
             Slider.Position = UDim2.new(0, 0, 0.945145488, 0)
             Slider.Size = UDim2.new(0, 203, 0, 39)
+            sliderapi.Instance = Slider
             local Name_6 = Instance.new("TextLabel")
             Name_6.Name = "Name"
             Name_6.Parent = Slider
@@ -558,6 +599,17 @@ function GuiLibrary.CreateWindow(args)
             Value.TextColor3 = Color3.fromRGB(255, 255, 255)
             Value.TextSize = 13.000
             Value.TextXAlignment = Enum.TextXAlignment.Right
+            local ValueLine = Instance.new("Frame")
+            ValueLine.Name = "ValueLine"
+            ValueLine.Parent = Value
+            ValueLine.AnchorPoint = Vector2.new(1, 0)
+            ValueLine.BackgroundColor3 = Color3.fromRGB(195, 195, 195)
+            ValueLine.BackgroundTransparency = 0.300
+            ValueLine.BorderSizePixel = 0
+            ValueLine.BorderColor3 = Color3.fromRGB(158, 158, 158)
+            ValueLine.Position = UDim2.new(1, 0, 1, 0)
+            ValueLine.Size = UDim2.new(.75, 0, 0, 1)
+            ValueLine.Visible = false
             local SliderBack = Instance.new("Frame")
             SliderBack.Name = "SliderBack"
             SliderBack.Parent = Slider
@@ -565,6 +617,7 @@ function GuiLibrary.CreateWindow(args)
             SliderBack.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             SliderBack.BackgroundTransparency = 0.300
             SliderBack.BorderSizePixel = 0
+            SliderBack.BorderColor3 = Color3.fromRGB(100, 100, 100)
             SliderBack.Position = UDim2.new(0.5, 0, 0.699999988, 0)
             SliderBack.Size = UDim2.new(0, 182, 0, 5)
             local SliderFill = Instance.new("Frame")
@@ -579,7 +632,32 @@ function GuiLibrary.CreateWindow(args)
                 SliderFill.BackgroundColor3 = utils:getColorOfObject(SliderFill)
             end))
 
+            utils:connection(Slider.MouseEnter:Connect(function()
+                SliderBack.BorderSizePixel = 1
+                SliderBack.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
+            end))
+
+            utils:connection(Slider.MouseLeave:Connect(function()
+                SliderBack.BorderSizePixel = 0
+                SliderBack.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            end))
+
+            utils:connection(Value.MouseEnter:Connect(function() 
+                ValueLine.Visible = true
+            end))
+
+            utils:connection(Value.MouseLeave:Connect(function() 
+                if not Value:IsFocused() then
+                    ValueLine.Visible = false
+                end
+            end))
+            
+            utils:connection(Value.Focused:Connect(function() 
+                ValueLine.Visible = true
+            end))
+
             utils:connection(Value.FocusLost:Connect(function() 
+                ValueLine.Visible = false
                 local parsed = tonumber(Value.Text)
                 if parsed then 
                     sliderapi.Set(parsed, true)
@@ -589,7 +667,7 @@ function GuiLibrary.CreateWindow(args)
             end))
           
             local function slide(input)
-                local sizeX = math.clamp((input.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
+                local sizeX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
                 SliderFill.Size = UDim2.new(sizeX, 0, 1, 0)
                 local value = math.round(((( (max - min) * sizeX ) + min) * (10 ^ round))) / (10 ^ round)
                 sliderapi.Value = value
@@ -658,15 +736,17 @@ function GuiLibrary.CreateWindow(args)
             Textbox.AnchorPoint = Vector2.new(0, 0.5)
             Textbox.Position = UDim2.new(0, 0, 0.5, 0)
             Textbox.Size = UDim2.new(0, 203, 0, 30)
+            boxapi.Instance = Textbox
             local Textbox_2 = Instance.new("Frame")
             Textbox_2.Name = "Textbox"
             Textbox_2.Parent = Textbox
             Textbox_2.AnchorPoint = Vector2.new(0.5, 0.5)
-            Textbox_2.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+            Textbox_2.BackgroundColor3 = Color3.fromRGB(17, 17, 17) 
             Textbox_2.BackgroundTransparency = 0.300
-            Textbox_2.BorderColor3 = Color3.fromRGB(6, 6, 6)
+            Textbox_2.BorderColor3 = Color3.fromRGB(100, 100, 100)
             Textbox_2.Position = UDim2.new(0.5, 0, 0.5, 0)
             Textbox_2.Size = UDim2.new(0, 184, 0, 22)
+            Textbox_2.BorderSizePixel = 0
             local TextBoxValue = Instance.new("TextBox")
             TextBoxValue.Name = "TextBoxValue"
             TextBoxValue.Parent = Textbox_2
@@ -684,6 +764,14 @@ function GuiLibrary.CreateWindow(args)
             TextBoxValue.TextColor3 = Color3.fromRGB(255, 255, 255)
             TextBoxValue.TextSize = 14.000
             TextBoxValue.TextXAlignment = Enum.TextXAlignment.Left
+
+            utils:connection(Textbox_2.MouseEnter:Connect(function()
+                Textbox_2.BorderSizePixel = 1
+            end))
+
+            utils:connection(Textbox_2.MouseLeave:Connect(function()
+                Textbox_2.BorderSizePixel = 0
+            end))
 
             function boxapi.Set(value) 
                 local value = value or args.Default or ""
@@ -715,6 +803,7 @@ function GuiLibrary.CreateWindow(args)
             Dropdown.BorderSizePixel = 0
             Dropdown.Position = UDim2.new(0, 0, 0.592544496, 0)
             Dropdown.Size = UDim2.new(0, 203, 0, 28)
+            dropdownapi.Instance = Dropdown
             local DropdownBack = Instance.new("Frame")
             DropdownBack.Name = "DropdownBack"
             DropdownBack.Parent = Dropdown
@@ -724,6 +813,8 @@ function GuiLibrary.CreateWindow(args)
             DropdownBack.BorderSizePixel = 0
             DropdownBack.Position = UDim2.new(0.5, 0, 0, 15)
             DropdownBack.Size = UDim2.new(0, 184, 0, 22)
+            DropdownBack.BorderColor3 = Color3.fromRGB(100, 100, 100)
+            DropdownBack.BorderMode = Enum.BorderMode.Outline
             local Name_4 = Instance.new("TextLabel")
             Name_4.Name = "Name"
             Name_4.Parent = DropdownBack
@@ -766,10 +857,20 @@ function GuiLibrary.CreateWindow(args)
             UIListLayout_4.HorizontalAlignment = Enum.HorizontalAlignment.Center
             UIListLayout_4.SortOrder = Enum.SortOrder.LayoutOrder
 
+            utils:connection(DropdownBack.MouseEnter:Connect(function()
+                DropdownBack.BorderSizePixel = 1
+                DropdownBack.ZIndex = 9
+            end))
+
+            utils:connection(DropdownBack.MouseLeave:Connect(function()
+                DropdownBack.BorderSizePixel = 0
+                DropdownBack.ZIndex = 1
+            end))
+
             function dropdownapi.Update() 
                 local size = UIListLayout_4.AbsoluteContentSize.Y
                 if DropdownValues.Visible then
-                    Dropdown.Size = UDim2.new(0, 203, 0, 28 + size)
+                    Dropdown.Size = UDim2.new(0, 203, 0, ((28 * UIScale.Scale) + size) / UIScale.Scale)
                 else
                     Dropdown.Size = UDim2.new(0, 203, 0, 28)
                 end
@@ -803,7 +904,9 @@ function GuiLibrary.CreateWindow(args)
                 DropdownValue.Parent = DropdownValues
                 DropdownValue.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
                 DropdownValue.BackgroundTransparency = 0.300
-                DropdownValue.BorderColor3 = Color3.fromRGB(6, 6, 6)
+                DropdownValue.BorderColor3 = Color3.fromRGB(100, 100, 100)
+                DropdownValue.BorderMode = Enum.BorderMode.Outline
+                DropdownValue.BorderSizePixel = 0
                 DropdownValue.Size = UDim2.new(0, 184, 0, 22)
                 DropdownValue.Font = Enum.Font.SourceSans
                 DropdownValue.Text = ""
@@ -812,6 +915,14 @@ function GuiLibrary.CreateWindow(args)
                 DropdownValue.MouseButton1Click:Connect(function()
                     dropdownapi.SetValue(value)
                 end)
+                utils:connection(DropdownValue.MouseEnter:Connect(function()
+                    DropdownValue.BorderSizePixel = 1
+                    DropdownValue.ZIndex = 9
+                end))
+                utils:connection(DropdownValue.MouseLeave:Connect(function()
+                    DropdownValue.BorderSizePixel = 0
+                    DropdownValue.ZIndex = 1
+                end))
                 local Name_5 = Instance.new("TextLabel")
                 Name_5.Name = "Name"
                 Name_5.Parent = DropdownValue
@@ -847,7 +958,9 @@ function GuiLibrary.CreateWindow(args)
                     dropdownapi.Expanded = false
                     DropdownValues.Visible = false
                     Expand_2.Rotation = 0
+                    --DropdownBack.BorderSizePixel = 1
                 else
+                    --DropdownBack.BorderSizePixel = 0
                     Expand_2.Rotation = 180
                     dropdownapi.Expanded = true
                     DropdownValues.Visible = true
@@ -893,6 +1006,7 @@ function GuiLibrary.CreateWindow(args)
             MultiDropdown.BorderSizePixel = 0
             MultiDropdown.Position = UDim2.new(0, 0, 0.769933522, 0)
             MultiDropdown.Size = UDim2.new(0, 203, 0, 72)
+            dropdownapi.Instance = MultiDropdown
             local MultiDropdownBack = Instance.new("Frame")
             MultiDropdownBack.Name = "MultiDropdownBack"
             MultiDropdownBack.Parent = MultiDropdown
@@ -902,6 +1016,7 @@ function GuiLibrary.CreateWindow(args)
             MultiDropdownBack.BorderSizePixel = 0
             MultiDropdownBack.Position = UDim2.new(0.5, 0, 0, 15)
             MultiDropdownBack.Size = UDim2.new(0, 184, 0, 22)
+            MultiDropdownBack.BorderColor3 = Color3.fromRGB(100, 100, 100)
             local Name_8 = Instance.new("TextLabel")
             Name_8.Name = "Name"
             Name_8.Parent = MultiDropdownBack
@@ -948,13 +1063,23 @@ function GuiLibrary.CreateWindow(args)
             function dropdownapi.Update() 
                 local size = UIListLayout_6.AbsoluteContentSize.Y
                 if MultiDropdownValues.Visible then
-                    MultiDropdown.Size = UDim2.new(0, 203, 0, 28 + size)
+                    MultiDropdown.Size = UDim2.new(0, 203, 0, ((28 * UIScale.Scale) + size) / UIScale.Scale)
                 else
                     MultiDropdown.Size = UDim2.new(0, 203, 0, 28)
                 end
             end
 
             utils:connection(UIListLayout_6:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(dropdownapi.Update))
+
+            utils:connection(MultiDropdownBack.MouseEnter:Connect(function()
+                MultiDropdownBack.BorderSizePixel = 1
+                MultiDropdownBack.ZIndex = 9
+            end))
+
+            utils:connection(MultiDropdownBack.MouseLeave:Connect(function()
+                MultiDropdownBack.BorderSizePixel = 0
+                MultiDropdownBack.ZIndex = 1
+            end))
 
             function dropdownapi.ToggleValue(value)
                 for i,v in next, dropdownapi.Values do
@@ -985,12 +1110,21 @@ function GuiLibrary.CreateWindow(args)
                 MultiDropdownValue.Parent = MultiDropdownValues
                 MultiDropdownValue.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
                 MultiDropdownValue.BackgroundTransparency = 0.300
-                MultiDropdownValue.BorderColor3 = Color3.fromRGB(6, 6, 6)
+                MultiDropdownValue.BorderColor3 = Color3.fromRGB(100, 100, 100)
+                MultiDropdownValue.BorderSizePixel = 0
                 MultiDropdownValue.Size = UDim2.new(0, 184, 0, 22)
                 MultiDropdownValue.Font = Enum.Font.SourceSans
                 MultiDropdownValue.Text = ""
                 MultiDropdownValue.TextColor3 = Color3.fromRGB(0, 0, 0)
                 MultiDropdownValue.TextSize = 14.000
+                utils:connection(MultiDropdownValue.MouseEnter:Connect(function()
+                    MultiDropdownValue.BorderSizePixel = 1
+                    MultiDropdownValue.ZIndex = 9
+                end))
+                utils:connection(MultiDropdownValue.MouseLeave:Connect(function()
+                    MultiDropdownValue.BorderSizePixel = 0
+                    MultiDropdownValue.ZIndex = 1
+                end))
                 local Name_9 = Instance.new("TextLabel")
                 Name_9.Name = "Name"
                 Name_9.Parent = MultiDropdownValue
@@ -1086,6 +1220,7 @@ function GuiLibrary.CreateWindow(args)
             Textlist.BorderSizePixel = 0
             Textlist.Position = UDim2.new(0, 0, 0.0896368474, 0)
             Textlist.Size = UDim2.new(0, 203, 0, 57)
+            listapi.Instance = Textlist
             local TextlistEnter = Instance.new("Frame")
             TextlistEnter.Name = "TextlistEnter"
             TextlistEnter.Parent = Textlist
@@ -1093,6 +1228,7 @@ function GuiLibrary.CreateWindow(args)
             TextlistEnter.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             TextlistEnter.BackgroundTransparency = 0.300
             TextlistEnter.BorderSizePixel = 0
+            TextlistEnter.BorderColor3 = Color3.fromRGB(100, 100, 100)
             TextlistEnter.Position = UDim2.new(0.5, 0, 0, 15)
             TextlistEnter.Size = UDim2.new(0, 184, 0, 22)
             local TextlistBoxEnter = Instance.new("TextBox")
@@ -1112,6 +1248,14 @@ function GuiLibrary.CreateWindow(args)
             TextlistBoxEnter.TextColor3 = Color3.fromRGB(255, 255, 255)
             TextlistBoxEnter.TextSize = 14.000
             TextlistBoxEnter.TextXAlignment = Enum.TextXAlignment.Left
+            utils:connection(TextlistEnter.MouseEnter:Connect(function()
+                TextlistEnter.BorderSizePixel = 1
+                TextlistEnter.ZIndex = 9
+            end))
+            utils:connection(TextlistEnter.MouseLeave:Connect(function()
+                TextlistEnter.BorderSizePixel = 0
+                TextlistEnter.ZIndex = 1
+            end))
             local Add = Instance.new("TextButton")
             Add.Name = "Add"
             Add.Parent = TextlistEnter
@@ -1123,8 +1267,14 @@ function GuiLibrary.CreateWindow(args)
             Add.Size = UDim2.new(0, 13, 0, 14)
             Add.Font = Enum.Font.Code
             Add.Text = "+"
-            Add.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Add.TextColor3 = Color3.fromRGB(170, 170, 170)
             Add.TextSize = 19.000
+            utils:connection(Add.MouseEnter:Connect(function()
+                Add.TextColor3 = Color3.fromRGB(255,255,255)
+            end))
+            utils:connection(Add.MouseLeave:Connect(function()
+                Add.TextColor3 = Color3.fromRGB(170, 170, 170)
+            end))
             local TextlistValues = Instance.new("Frame")
             TextlistValues.Name = "TextlistValues"
             TextlistValues.Parent = Textlist
@@ -1141,14 +1291,14 @@ function GuiLibrary.CreateWindow(args)
             
             UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
                 --TextlistValues.Size = UDim2.new(0, 184, 0, UIListLayout.AbsoluteContentSize.Y + 22)
-                Textlist.Size = UDim2.new(0, 203, 0, UIListLayout.AbsoluteContentSize.Y + 37)
+                Textlist.Size = UDim2.new(0, 203, 0, (UIListLayout.AbsoluteContentSize.Y + (37 * UIScale.Scale)) / UIScale.Scale)
             end)
-            Textlist.Size = UDim2.new(0, 203, 0, UIListLayout.AbsoluteContentSize.Y + 37)
+            Textlist.Size = UDim2.new(0, 203, 0, (UIListLayout.AbsoluteContentSize.Y + (37 * UIScale.Scale)) / UIScale.Scale)
 
             local function addValue(value) 
                 local valueapi = {}
                 valueapi.value = value
-                local TextlistValue = Instance.new("Frame")
+                local TextlistValue = Instance.new("TextButton")
                 TextlistValue.Name = "TextlistValue"
                 TextlistValue.Parent = TextlistValues
                 TextlistValue.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1157,6 +1307,8 @@ function GuiLibrary.CreateWindow(args)
                 TextlistValue.BorderSizePixel = 0
                 TextlistValue.Position = UDim2.new(0.5, 0, 0.5, 0)
                 TextlistValue.Size = UDim2.new(0, 184, 0, 22)
+                TextlistValue.Text = ""
+                TextlistValue.BorderColor3 = Color3.fromRGB(100, 100, 100)
                 local TextlistBoxEnter_2 = Instance.new("TextLabel")
                 TextlistBoxEnter_2.Name = "TextlistBoxEnter"
                 TextlistBoxEnter_2.Parent = TextlistValue
@@ -1171,6 +1323,14 @@ function GuiLibrary.CreateWindow(args)
                 TextlistBoxEnter_2.TextColor3 = Color3.fromRGB(255, 255, 255)
                 TextlistBoxEnter_2.TextSize = 14.000
                 TextlistBoxEnter_2.TextXAlignment = Enum.TextXAlignment.Left
+                utils:connection(TextlistValue.MouseEnter:Connect(function()
+                    TextlistValue.BorderSizePixel = 1
+                    TextlistValue.ZIndex = 9
+                end))
+                utils:connection(TextlistValue.MouseLeave:Connect(function()
+                    TextlistValue.BorderSizePixel = 0
+                    TextlistValue.ZIndex = 1
+                end))
                 local Remove = Instance.new("TextButton")
                 Remove.Name = "Remove"
                 Remove.Parent = TextlistValue
@@ -1178,22 +1338,33 @@ function GuiLibrary.CreateWindow(args)
                 Remove.BackgroundColor3 = Color3.fromRGB(2, 255, 137)
                 Remove.BackgroundTransparency = 1.000
                 Remove.BorderSizePixel = 0
-                Remove.Position = UDim2.new(0.899999857, 0, 0.431818187, 0)
+                Remove.Position = UDim2.new(0.899999858, 0, 0.431818187, 0)
                 Remove.Size = UDim2.new(0, 13, 0, 11)
                 Remove.Font = Enum.Font.Jura
                 Remove.Text = "x"
-                Remove.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Remove.TextColor3 = Color3.fromRGB(170, 170, 170)
                 Remove.TextSize = 18.000
                 valueapi.Instance = TextlistValue
+
+                utils:connection(Remove.MouseEnter:Connect(function()
+                    Remove.TextColor3 = Color3.fromRGB(255,255,255)
+                end))
+                utils:connection(Remove.MouseLeave:Connect(function()
+                    Remove.TextColor3 = Color3.fromRGB(170, 170, 170)
+                end))
 
                 function valueapi.Remove()
                     listapi.Values[valueapi.value] = nil
                     TextlistValue:Destroy()
                 end
 
-                Remove.MouseButton1Click:Connect(function()
+                utils:connection(Remove.MouseButton1Click:Connect(function()
                     valueapi.Remove()
-                end)
+                end))
+
+                utils:connection(TextlistValue.MouseButton1Click:Connect(function()
+                    valueapi.Remove()
+                end))
 
                 return valueapi
             end
@@ -1283,7 +1454,7 @@ function GuiLibrary.CreateCustomWindow(args)
     dehaze.Parent = TopBar
     dehaze.BackgroundTransparency = 1.000
     dehaze.LayoutOrder = 6
-    dehaze.Position = UDim2.new(0.839622617, 0, 0.128571421, 0)
+    dehaze.Position = UDim2.new(0.839622617, 0, 0.128581421, 0)
     dehaze.Size = UDim2.new(0, 25, 0, 25)
     dehaze.ZIndex = 2
     dehaze.Image = "rbxassetid://3926305904"
@@ -1316,6 +1487,7 @@ function GuiLibrary.CreateCustomWindow(args)
     ModuleContainer.BackgroundTransparency = 1.000
     ModuleContainer.BorderSizePixel = 0
     ModuleContainer.Size = UDim2.new(0, 203, 0.990886092, 0)
+    local ModuleOptionsContainer = ModuleContainer -- I was getting confused with custom windows using a different variable, so i just made it the same.
     local UIListLayout = Instance.new("UIListLayout")
     UIListLayout.Padding = UDim.new(0, 0)
     UIListLayout.Parent = ModuleContainer
@@ -1331,11 +1503,9 @@ function GuiLibrary.CreateCustomWindow(args)
     end))
 
     function windowapi.Update() 
-        local old = getthreadidentityfunc(); setthreadidentityfunc(8)
         local size = UIListLayout.AbsoluteContentSize
-        ModuleContainer.Size = UDim2.new(1, 0, 0, size.Y)
-        Settings.Size = UDim2.new(1, 0, 0, size.Y)
-        setthreadidentityfunc(old)
+        ModuleContainer.Size = UDim2.new(1, 0, 0, size.Y / UIScale.Scale)
+        Settings.Size = UDim2.new(1, 0, 0, (size.Y + (6 * UIScale.Scale)) / UIScale.Scale)
     end
 
     utils:connection(UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(windowapi.Update))
@@ -1370,14 +1540,17 @@ function GuiLibrary.CreateCustomWindow(args)
 
     function windowapi.CreateToggle(args) 
         local toggleapi = {Enabled = args.Default or false}
-        local Toggle = Instance.new("Frame")
+        local Toggle = Instance.new("TextButton")
         Toggle.Name = "Toggle"
-        Toggle.Parent = ModuleContainer
+        Toggle.Parent = ModuleOptionsContainer
         Toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Toggle.BackgroundTransparency = 1.000
         Toggle.BorderSizePixel = 0
         Toggle.Position = UDim2.new(0, 0, 2.75755095, 0)
         Toggle.Size = UDim2.new(0, 203, 0, 24)
+        Toggle.Text = ""
+        Toggle.AutoButtonColor = false
+        toggleapi.Instance = Toggle
         local Name_7 = Instance.new("TextLabel")
         Name_7.Name = "Name"
         Name_7.Parent = Toggle
@@ -1391,7 +1564,7 @@ function GuiLibrary.CreateCustomWindow(args)
         Name_7.TextColor3 = Color3.fromRGB(255, 255, 255)
         Name_7.TextSize = 14.000
         Name_7.TextXAlignment = Enum.TextXAlignment.Left
-        local Toggle_2 = Instance.new("Frame")
+        local Toggle_2 = Instance.new("TextButton")
         Toggle_2.Name = "Toggle"
         Toggle_2.Parent = Toggle
         Toggle_2.AnchorPoint = Vector2.new(0, 0.5)
@@ -1400,6 +1573,9 @@ function GuiLibrary.CreateCustomWindow(args)
         Toggle_2.BorderSizePixel = 0
         Toggle_2.Position = UDim2.new(0, 170, 0, 14)
         Toggle_2.Size = UDim2.new(0, 21, 0, 10)
+        Toggle_2.Text = ""
+        Toggle_2.BorderColor3 = Color3.fromRGB(100, 100, 100)
+        Toggle_2.AutoButtonColor = false
         local ToggleButton = Instance.new("TextButton")
         ToggleButton.Name = "ToggleButton"
         ToggleButton.Parent = Toggle_2
@@ -1429,6 +1605,16 @@ function GuiLibrary.CreateCustomWindow(args)
             end
         end
         utils:connection(ToggleButton.MouseButton1Click:Connect(toggleapi.Toggle))
+        utils:connection(Toggle_2.MouseButton1Click:Connect(toggleapi.Toggle))
+        utils:connection(Toggle.MouseButton1Click:Connect(toggleapi.Toggle))
+
+        utils:connection(Toggle.MouseEnter:Connect(function()
+            Toggle_2.BorderSizePixel = 1
+        end))
+
+        utils:connection(Toggle.MouseLeave:Connect(function()
+            Toggle_2.BorderSizePixel = 0
+        end))
 
         if (args.Default == true) then 
             toggleapi.Toggle()
@@ -1442,7 +1628,7 @@ function GuiLibrary.CreateCustomWindow(args)
     function windowapi.CreateSlider(args) 
         local sliderapi = {}
         local min, max, default, round = args.Min, args.Max, (args.Default or args.Min), (args.Round or 1)
-        
+            
         local function getValueText(value)
             if math.floor(value) == value then 
                 return tostring(value) .. ".0"
@@ -1452,12 +1638,13 @@ function GuiLibrary.CreateCustomWindow(args)
         
         local Slider = Instance.new("Frame")
         Slider.Name = "Slider"
-        Slider.Parent = ModuleContainer
+        Slider.Parent = ModuleOptionsContainer
         Slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Slider.BackgroundTransparency = 1.000
         Slider.BorderSizePixel = 0
         Slider.Position = UDim2.new(0, 0, 0.945145488, 0)
         Slider.Size = UDim2.new(0, 203, 0, 39)
+        sliderapi.Instance = Slider
         local Name_6 = Instance.new("TextLabel")
         Name_6.Name = "Name"
         Name_6.Parent = Slider
@@ -1485,6 +1672,17 @@ function GuiLibrary.CreateCustomWindow(args)
         Value.TextColor3 = Color3.fromRGB(255, 255, 255)
         Value.TextSize = 13.000
         Value.TextXAlignment = Enum.TextXAlignment.Right
+        local ValueLine = Instance.new("Frame")
+        ValueLine.Name = "ValueLine"
+        ValueLine.Parent = Value
+        ValueLine.AnchorPoint = Vector2.new(1, 0)
+        ValueLine.BackgroundColor3 = Color3.fromRGB(195, 195, 195)
+        ValueLine.BackgroundTransparency = 0.300
+        ValueLine.BorderSizePixel = 0
+        ValueLine.BorderColor3 = Color3.fromRGB(158, 158, 158)
+        ValueLine.Position = UDim2.new(1, 0, 1, 0)
+        ValueLine.Size = UDim2.new(.75, 0, 0, 1)
+        ValueLine.Visible = false
         local SliderBack = Instance.new("Frame")
         SliderBack.Name = "SliderBack"
         SliderBack.Parent = Slider
@@ -1492,6 +1690,7 @@ function GuiLibrary.CreateCustomWindow(args)
         SliderBack.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
         SliderBack.BackgroundTransparency = 0.300
         SliderBack.BorderSizePixel = 0
+        SliderBack.BorderColor3 = Color3.fromRGB(100, 100, 100)
         SliderBack.Position = UDim2.new(0.5, 0, 0.699999988, 0)
         SliderBack.Size = UDim2.new(0, 182, 0, 5)
         local SliderFill = Instance.new("Frame")
@@ -1506,7 +1705,32 @@ function GuiLibrary.CreateCustomWindow(args)
             SliderFill.BackgroundColor3 = utils:getColorOfObject(SliderFill)
         end))
 
+        utils:connection(Slider.MouseEnter:Connect(function()
+            SliderBack.BorderSizePixel = 1
+            SliderBack.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
+        end))
+
+        utils:connection(Slider.MouseLeave:Connect(function()
+            SliderBack.BorderSizePixel = 0
+            SliderBack.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+        end))
+
+        utils:connection(Value.MouseEnter:Connect(function() 
+            ValueLine.Visible = true
+        end))
+
+        utils:connection(Value.MouseLeave:Connect(function() 
+            if not Value:IsFocused() then
+                ValueLine.Visible = false
+            end
+        end))
+        
+        utils:connection(Value.Focused:Connect(function() 
+            ValueLine.Visible = true
+        end))
+
         utils:connection(Value.FocusLost:Connect(function() 
+            ValueLine.Visible = false
             local parsed = tonumber(Value.Text)
             if parsed then 
                 sliderapi.Set(parsed, true)
@@ -1514,9 +1738,9 @@ function GuiLibrary.CreateCustomWindow(args)
                 Value.Text = getValueText(sliderapi.Value)
             end
         end))
-      
+        
         local function slide(input)
-            local sizeX = math.clamp((input.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
+            local sizeX = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
             SliderFill.Size = UDim2.new(sizeX, 0, 1, 0)
             local value = math.round(((( (max - min) * sizeX ) + min) * (10 ^ round))) / (10 ^ round)
             sliderapi.Value = value
@@ -1585,15 +1809,17 @@ function GuiLibrary.CreateCustomWindow(args)
         Textbox.AnchorPoint = Vector2.new(0, 0.5)
         Textbox.Position = UDim2.new(0, 0, 0.5, 0)
         Textbox.Size = UDim2.new(0, 203, 0, 30)
+        boxapi.Instance = Textbox
         local Textbox_2 = Instance.new("Frame")
         Textbox_2.Name = "Textbox"
         Textbox_2.Parent = Textbox
         Textbox_2.AnchorPoint = Vector2.new(0.5, 0.5)
-        Textbox_2.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+        Textbox_2.BackgroundColor3 = Color3.fromRGB(17, 17, 17) 
         Textbox_2.BackgroundTransparency = 0.300
-        Textbox_2.BorderColor3 = Color3.fromRGB(6, 6, 6)
+        Textbox_2.BorderColor3 = Color3.fromRGB(100, 100, 100)
         Textbox_2.Position = UDim2.new(0.5, 0, 0.5, 0)
         Textbox_2.Size = UDim2.new(0, 184, 0, 22)
+        Textbox_2.BorderSizePixel = 0
         local TextBoxValue = Instance.new("TextBox")
         TextBoxValue.Name = "TextBoxValue"
         TextBoxValue.Parent = Textbox_2
@@ -1611,6 +1837,14 @@ function GuiLibrary.CreateCustomWindow(args)
         TextBoxValue.TextColor3 = Color3.fromRGB(255, 255, 255)
         TextBoxValue.TextSize = 14.000
         TextBoxValue.TextXAlignment = Enum.TextXAlignment.Left
+
+        utils:connection(Textbox_2.MouseEnter:Connect(function()
+            Textbox_2.BorderSizePixel = 1
+        end))
+
+        utils:connection(Textbox_2.MouseLeave:Connect(function()
+            Textbox_2.BorderSizePixel = 0
+        end))
 
         function boxapi.Set(value) 
             local value = value or args.Default or ""
@@ -1636,12 +1870,13 @@ function GuiLibrary.CreateCustomWindow(args)
         local dropdownapi = {Values = {}, Expanded = false}
         local Dropdown = Instance.new("Frame")
         Dropdown.Name = "Dropdown"
-        Dropdown.Parent = ModuleContainer
+        Dropdown.Parent = ModuleOptionsContainer
         Dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Dropdown.BackgroundTransparency = 1.000
         Dropdown.BorderSizePixel = 0
         Dropdown.Position = UDim2.new(0, 0, 0.592544496, 0)
         Dropdown.Size = UDim2.new(0, 203, 0, 28)
+        dropdownapi.Instance = Dropdown
         local DropdownBack = Instance.new("Frame")
         DropdownBack.Name = "DropdownBack"
         DropdownBack.Parent = Dropdown
@@ -1651,6 +1886,8 @@ function GuiLibrary.CreateCustomWindow(args)
         DropdownBack.BorderSizePixel = 0
         DropdownBack.Position = UDim2.new(0.5, 0, 0, 15)
         DropdownBack.Size = UDim2.new(0, 184, 0, 22)
+        DropdownBack.BorderColor3 = Color3.fromRGB(100, 100, 100)
+        DropdownBack.BorderMode = Enum.BorderMode.Outline
         local Name_4 = Instance.new("TextLabel")
         Name_4.Name = "Name"
         Name_4.Parent = DropdownBack
@@ -1693,10 +1930,20 @@ function GuiLibrary.CreateCustomWindow(args)
         UIListLayout_4.HorizontalAlignment = Enum.HorizontalAlignment.Center
         UIListLayout_4.SortOrder = Enum.SortOrder.LayoutOrder
 
+        utils:connection(DropdownBack.MouseEnter:Connect(function()
+            DropdownBack.BorderSizePixel = 1
+            DropdownBack.ZIndex = 9
+        end))
+
+        utils:connection(DropdownBack.MouseLeave:Connect(function()
+            DropdownBack.BorderSizePixel = 0
+            DropdownBack.ZIndex = 1
+        end))
+
         function dropdownapi.Update() 
             local size = UIListLayout_4.AbsoluteContentSize.Y
             if DropdownValues.Visible then
-                Dropdown.Size = UDim2.new(0, 203, 0, 28 + size)
+                Dropdown.Size = UDim2.new(0, 203, 0, ((28 * UIScale.Scale) + size) / UIScale.Scale)
             else
                 Dropdown.Size = UDim2.new(0, 203, 0, 28)
             end
@@ -1730,7 +1977,9 @@ function GuiLibrary.CreateCustomWindow(args)
             DropdownValue.Parent = DropdownValues
             DropdownValue.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             DropdownValue.BackgroundTransparency = 0.300
-            DropdownValue.BorderColor3 = Color3.fromRGB(6, 6, 6)
+            DropdownValue.BorderColor3 = Color3.fromRGB(100, 100, 100)
+            DropdownValue.BorderMode = Enum.BorderMode.Outline
+            DropdownValue.BorderSizePixel = 0
             DropdownValue.Size = UDim2.new(0, 184, 0, 22)
             DropdownValue.Font = Enum.Font.SourceSans
             DropdownValue.Text = ""
@@ -1739,6 +1988,14 @@ function GuiLibrary.CreateCustomWindow(args)
             DropdownValue.MouseButton1Click:Connect(function()
                 dropdownapi.SetValue(value)
             end)
+            utils:connection(DropdownValue.MouseEnter:Connect(function()
+                DropdownValue.BorderSizePixel = 1
+                DropdownValue.ZIndex = 9
+            end))
+            utils:connection(DropdownValue.MouseLeave:Connect(function()
+                DropdownValue.BorderSizePixel = 0
+                DropdownValue.ZIndex = 1
+            end))
             local Name_5 = Instance.new("TextLabel")
             Name_5.Name = "Name"
             Name_5.Parent = DropdownValue
@@ -1774,7 +2031,9 @@ function GuiLibrary.CreateCustomWindow(args)
                 dropdownapi.Expanded = false
                 DropdownValues.Visible = false
                 Expand_2.Rotation = 0
+                --DropdownBack.BorderSizePixel = 1
             else
+                --DropdownBack.BorderSizePixel = 0
                 Expand_2.Rotation = 180
                 dropdownapi.Expanded = true
                 DropdownValues.Visible = true
@@ -1813,12 +2072,13 @@ function GuiLibrary.CreateCustomWindow(args)
 
         local MultiDropdown = Instance.new("Frame")
         MultiDropdown.Name = "MultiDropdown"
-        MultiDropdown.Parent = ModuleContainer
+        MultiDropdown.Parent = ModuleOptionsContainer
         MultiDropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         MultiDropdown.BackgroundTransparency = 1.000
         MultiDropdown.BorderSizePixel = 0
         MultiDropdown.Position = UDim2.new(0, 0, 0.769933522, 0)
         MultiDropdown.Size = UDim2.new(0, 203, 0, 72)
+        dropdownapi.Instance = MultiDropdown
         local MultiDropdownBack = Instance.new("Frame")
         MultiDropdownBack.Name = "MultiDropdownBack"
         MultiDropdownBack.Parent = MultiDropdown
@@ -1828,6 +2088,7 @@ function GuiLibrary.CreateCustomWindow(args)
         MultiDropdownBack.BorderSizePixel = 0
         MultiDropdownBack.Position = UDim2.new(0.5, 0, 0, 15)
         MultiDropdownBack.Size = UDim2.new(0, 184, 0, 22)
+        MultiDropdownBack.BorderColor3 = Color3.fromRGB(100, 100, 100)
         local Name_8 = Instance.new("TextLabel")
         Name_8.Name = "Name"
         Name_8.Parent = MultiDropdownBack
@@ -1874,13 +2135,23 @@ function GuiLibrary.CreateCustomWindow(args)
         function dropdownapi.Update() 
             local size = UIListLayout_6.AbsoluteContentSize.Y
             if MultiDropdownValues.Visible then
-                MultiDropdown.Size = UDim2.new(0, 203, 0, 28 + size)
+                MultiDropdown.Size = UDim2.new(0, 203, 0, ((28 * UIScale.Scale) + size) / UIScale.Scale)
             else
                 MultiDropdown.Size = UDim2.new(0, 203, 0, 28)
             end
         end
 
         utils:connection(UIListLayout_6:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(dropdownapi.Update))
+
+        utils:connection(MultiDropdownBack.MouseEnter:Connect(function()
+            MultiDropdownBack.BorderSizePixel = 1
+            MultiDropdownBack.ZIndex = 9
+        end))
+
+        utils:connection(MultiDropdownBack.MouseLeave:Connect(function()
+            MultiDropdownBack.BorderSizePixel = 0
+            MultiDropdownBack.ZIndex = 1
+        end))
 
         function dropdownapi.ToggleValue(value)
             for i,v in next, dropdownapi.Values do
@@ -1911,12 +2182,21 @@ function GuiLibrary.CreateCustomWindow(args)
             MultiDropdownValue.Parent = MultiDropdownValues
             MultiDropdownValue.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             MultiDropdownValue.BackgroundTransparency = 0.300
-            MultiDropdownValue.BorderColor3 = Color3.fromRGB(6, 6, 6)
+            MultiDropdownValue.BorderColor3 = Color3.fromRGB(100, 100, 100)
+            MultiDropdownValue.BorderSizePixel = 0
             MultiDropdownValue.Size = UDim2.new(0, 184, 0, 22)
             MultiDropdownValue.Font = Enum.Font.SourceSans
             MultiDropdownValue.Text = ""
             MultiDropdownValue.TextColor3 = Color3.fromRGB(0, 0, 0)
             MultiDropdownValue.TextSize = 14.000
+            utils:connection(MultiDropdownValue.MouseEnter:Connect(function()
+                MultiDropdownValue.BorderSizePixel = 1
+                MultiDropdownValue.ZIndex = 9
+            end))
+            utils:connection(MultiDropdownValue.MouseLeave:Connect(function()
+                MultiDropdownValue.BorderSizePixel = 0
+                MultiDropdownValue.ZIndex = 1
+            end))
             local Name_9 = Instance.new("TextLabel")
             Name_9.Name = "Name"
             Name_9.Parent = MultiDropdownValue
@@ -2006,12 +2286,13 @@ function GuiLibrary.CreateCustomWindow(args)
 
         local Textlist = Instance.new("Frame")
         Textlist.Name = "Textlist"
-        Textlist.Parent = ModuleContainer
+        Textlist.Parent = ModuleOptionsContainer
         Textlist.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Textlist.BackgroundTransparency = 1.000
         Textlist.BorderSizePixel = 0
         Textlist.Position = UDim2.new(0, 0, 0.0896368474, 0)
         Textlist.Size = UDim2.new(0, 203, 0, 57)
+        listapi.Instance = Textlist
         local TextlistEnter = Instance.new("Frame")
         TextlistEnter.Name = "TextlistEnter"
         TextlistEnter.Parent = Textlist
@@ -2019,6 +2300,7 @@ function GuiLibrary.CreateCustomWindow(args)
         TextlistEnter.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
         TextlistEnter.BackgroundTransparency = 0.300
         TextlistEnter.BorderSizePixel = 0
+        TextlistEnter.BorderColor3 = Color3.fromRGB(100, 100, 100)
         TextlistEnter.Position = UDim2.new(0.5, 0, 0, 15)
         TextlistEnter.Size = UDim2.new(0, 184, 0, 22)
         local TextlistBoxEnter = Instance.new("TextBox")
@@ -2038,6 +2320,14 @@ function GuiLibrary.CreateCustomWindow(args)
         TextlistBoxEnter.TextColor3 = Color3.fromRGB(255, 255, 255)
         TextlistBoxEnter.TextSize = 14.000
         TextlistBoxEnter.TextXAlignment = Enum.TextXAlignment.Left
+        utils:connection(TextlistEnter.MouseEnter:Connect(function()
+            TextlistEnter.BorderSizePixel = 1
+            TextlistEnter.ZIndex = 9
+        end))
+        utils:connection(TextlistEnter.MouseLeave:Connect(function()
+            TextlistEnter.BorderSizePixel = 0
+            TextlistEnter.ZIndex = 1
+        end))
         local Add = Instance.new("TextButton")
         Add.Name = "Add"
         Add.Parent = TextlistEnter
@@ -2049,8 +2339,14 @@ function GuiLibrary.CreateCustomWindow(args)
         Add.Size = UDim2.new(0, 13, 0, 14)
         Add.Font = Enum.Font.Code
         Add.Text = "+"
-        Add.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Add.TextColor3 = Color3.fromRGB(170, 170, 170)
         Add.TextSize = 19.000
+        utils:connection(Add.MouseEnter:Connect(function()
+            Add.TextColor3 = Color3.fromRGB(255,255,255)
+        end))
+        utils:connection(Add.MouseLeave:Connect(function()
+            Add.TextColor3 = Color3.fromRGB(170, 170, 170)
+        end))
         local TextlistValues = Instance.new("Frame")
         TextlistValues.Name = "TextlistValues"
         TextlistValues.Parent = Textlist
@@ -2067,14 +2363,14 @@ function GuiLibrary.CreateCustomWindow(args)
         
         UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             --TextlistValues.Size = UDim2.new(0, 184, 0, UIListLayout.AbsoluteContentSize.Y + 22)
-            Textlist.Size = UDim2.new(0, 203, 0, UIListLayout.AbsoluteContentSize.Y + 37)
+            Textlist.Size = UDim2.new(0, 203, 0, (UIListLayout.AbsoluteContentSize.Y + (37 * UIScale.Scale)) / UIScale.Scale)
         end)
-        Textlist.Size = UDim2.new(0, 203, 0, UIListLayout.AbsoluteContentSize.Y + 37)
+        Textlist.Size = UDim2.new(0, 203, 0, (UIListLayout.AbsoluteContentSize.Y + (37 * UIScale.Scale)) / UIScale.Scale)
 
         local function addValue(value) 
             local valueapi = {}
             valueapi.value = value
-            local TextlistValue = Instance.new("Frame")
+            local TextlistValue = Instance.new("TextButton")
             TextlistValue.Name = "TextlistValue"
             TextlistValue.Parent = TextlistValues
             TextlistValue.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -2083,6 +2379,8 @@ function GuiLibrary.CreateCustomWindow(args)
             TextlistValue.BorderSizePixel = 0
             TextlistValue.Position = UDim2.new(0.5, 0, 0.5, 0)
             TextlistValue.Size = UDim2.new(0, 184, 0, 22)
+            TextlistValue.Text = ""
+            TextlistValue.BorderColor3 = Color3.fromRGB(100, 100, 100)
             local TextlistBoxEnter_2 = Instance.new("TextLabel")
             TextlistBoxEnter_2.Name = "TextlistBoxEnter"
             TextlistBoxEnter_2.Parent = TextlistValue
@@ -2097,6 +2395,14 @@ function GuiLibrary.CreateCustomWindow(args)
             TextlistBoxEnter_2.TextColor3 = Color3.fromRGB(255, 255, 255)
             TextlistBoxEnter_2.TextSize = 14.000
             TextlistBoxEnter_2.TextXAlignment = Enum.TextXAlignment.Left
+            utils:connection(TextlistValue.MouseEnter:Connect(function()
+                TextlistValue.BorderSizePixel = 1
+                TextlistValue.ZIndex = 9
+            end))
+            utils:connection(TextlistValue.MouseLeave:Connect(function()
+                TextlistValue.BorderSizePixel = 0
+                TextlistValue.ZIndex = 1
+            end))
             local Remove = Instance.new("TextButton")
             Remove.Name = "Remove"
             Remove.Parent = TextlistValue
@@ -2104,22 +2410,33 @@ function GuiLibrary.CreateCustomWindow(args)
             Remove.BackgroundColor3 = Color3.fromRGB(2, 255, 137)
             Remove.BackgroundTransparency = 1.000
             Remove.BorderSizePixel = 0
-            Remove.Position = UDim2.new(0.899999857, 0, 0.431818187, 0)
+            Remove.Position = UDim2.new(0.899999858, 0, 0.431818187, 0)
             Remove.Size = UDim2.new(0, 13, 0, 11)
             Remove.Font = Enum.Font.Jura
             Remove.Text = "x"
-            Remove.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Remove.TextColor3 = Color3.fromRGB(170, 170, 170)
             Remove.TextSize = 18.000
             valueapi.Instance = TextlistValue
+
+            utils:connection(Remove.MouseEnter:Connect(function()
+                Remove.TextColor3 = Color3.fromRGB(255,255,255)
+            end))
+            utils:connection(Remove.MouseLeave:Connect(function()
+                Remove.TextColor3 = Color3.fromRGB(170, 170, 170)
+            end))
 
             function valueapi.Remove()
                 listapi.Values[valueapi.value] = nil
                 TextlistValue:Destroy()
             end
 
-            Remove.MouseButton1Click:Connect(function()
+            utils:connection(Remove.MouseButton1Click:Connect(function()
                 valueapi.Remove()
-            end)
+            end))
+
+            utils:connection(TextlistValue.MouseButton1Click:Connect(function()
+                valueapi.Remove()
+            end))
 
             return valueapi
         end
@@ -2149,11 +2466,8 @@ function GuiLibrary.CreateCustomWindow(args)
             listapi.Add(value)
             TextlistBoxEnter.Text = ""
         end)
-        utils:addObject(args.Name .. "Textlist" .. "_" .. customwindowname, {Name = args.Name, Instance = Textlist, Type = "Textlist", CustomWindow = customwindowname, API = listapi, args = args})
-        
-        return listapi
     end
-
+    
     utils:addObject(args.Name .. "CustomWindow", {Name = args.Name, Instance = CustomWindow, Type = "CustomWindow", API = windowapi, args = args})
     return windowapi
 end

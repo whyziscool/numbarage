@@ -17,6 +17,7 @@ local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or flux
 local setthreadidentityfunc = syn and syn.set_thread_identity or set_thread_identity or setidentity or setthreadidentity
 local getthreadidentityfunc = syn and syn.get_thread_identity or get_thread_identity or getidentity or getthreadidentity
 local UIS = game:GetService("UserInputService")
+local ts = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local lplr = Players.LocalPlayer
 local entity, GuiLibrary
@@ -322,6 +323,25 @@ local funcs = {}; do
             end
         end
     end
+
+    function funcs:tweenNumber(start, goal, time, func, _end) 
+        local start, goal, time = start or 0, goal or 1, time or 1
+        local worker = funcs:newWorker()
+        local N = Instance.new("NumberValue")
+        N.Parent = engoware.GuiLibrary.ScreenGui
+        N.Value = start
+        N.Name = "TweeningNumber"
+        worker:add(N.Changed:Connect(function(value)
+            func(value)
+        end))
+        local t = ts:Create(N, TweenInfo.new(), {Value = goal})
+        t:Play()
+        worker:add(t.Completed:Connect(function()
+            worker:clean()
+            N:Destroy()
+            _end()
+        end))
+    end
 end
 
 if not getgenv or (identifyexecutor and identifyexecutor():find("Arceus")) then
@@ -337,13 +357,12 @@ entity.fullEntityRefresh()
 GuiLibrary = funcs:run(funcs:require("engoware/GuiLibrary.lua"))
 
 getgenv().engoware = {}
+engoware.UninjectEvent = Instance.new("BindableEvent")
 engoware.entity = entity
 engoware.GuiLibrary = GuiLibrary
 engoware.funcs = funcs
 makefolder("engoware")
 makefolder("engoware/configs")
-
-engoware.UninjectEvent = Instance.new("BindableEvent")
 
 local windows = {
     combat = GuiLibrary.CreateWindow({Name = "combat"}),

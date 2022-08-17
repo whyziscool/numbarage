@@ -280,9 +280,11 @@ function funcs:getOtherSideBed(bed)
     local blocks = funcs:getSurroundingBlocks(bed.Position)
     for i,v in next, blocks do 
         if v.Name == "bed" then 
+            --print(v:GetFullName())
             return v
         end
     end
+    --print("no other side")
 end
 
 function funcs:isWhitelisted(plr)
@@ -491,60 +493,77 @@ do
 end
 
 do 
+    GuiLibrary.utils:removeObject("speedOptionsButton")
     local Factor = 0
-
+    local Dir = true
     local BodyVelocity;
-    local Fly = { };
+    local Fly = {};
     local Tick = 0
-    local ChangeDelay = { }
+    local ChangeDelay = {}
     local SpeedInc = {};
     local max = {};
-    GuiLibrary.utils:removeObject("speedOptionsButton")
-    local SpeedVal = { };
-    local Speed = { };
+    local SpeedVal = {};
+    local Speed = {};
+    local SpeedMode = {};
+    local CFrameSpeed = {};
     Speed = GuiLibrary.Objects.movementWindow.API.CreateOptionsButton({
         Name = "speed",
         Function = function(callback) 
             if callback then 
-                local Dir = true
-                funcs:bindToHeartbeat("speedBedwars", function(dt)
-                    if Fly.Enabled then 
-                        if BodyVelocity then 
-                            BodyVelocity.Velocity = Vector3.zero
-                            BodyVelocity.MaxForce = Vector3.zero
-                        end
-                        return
-                    end
-
-                    if not entity.isAlive then
-                        return 
-                    end
-
-                    local Humanoid = entity.character.Humanoid
-                    local MoveDirection = Humanoid.MoveDirection
-                    local Velocity = entity.character.HumanoidRootPart.Velocity
-
-                    if Tick - tick() < 0 then
-                        if Dir then
-                            Factor = Factor + SpeedInc.Value
-                        else
-                            Factor = Factor - SpeedInc.Value
+                if SpeedMode.Value == 'heatseeker' then
+                    funcs:bindToHeartbeat("speedBedwars", function(dt)
+                        if Fly.Enabled then 
+                            if BodyVelocity then 
+                                BodyVelocity.Velocity = Vector3.zero
+                                BodyVelocity.MaxForce = Vector3.zero
+                            end
+                            return
                         end
 
-                        if Factor < -(max.Value) then
-                            Dir = true
-                        elseif Factor > (max.Value) then
-                            Dir = false
+                        if not entity.isAlive then
+                            return 
                         end
-                        Tick = tick() + (ChangeDelay.Value / 100)
-                    end
 
-                    local speed = math.clamp(SpeedVal.Value + Factor, SpeedVal.Value, math.huge)
-                    local NewVelo = Vector3.new(MoveDirection.X * speed, Velocity.Y, MoveDirection.Z * speed)
-                    BodyVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity") or Instance.new("BodyVelocity", entity.character.HumanoidRootPart)
-                    BodyVelocity.Velocity = Vector3.new(NewVelo.X, 0, NewVelo.Z)
-                    BodyVelocity.MaxForce = Vector3.new(9e9, 0, 9e9)
-                end)
+                        local Humanoid = entity.character.Humanoid
+                        local MoveDirection = Humanoid.MoveDirection
+
+                        if Tick - tick() < 0 then
+                            if Dir then
+                                Factor = Factor + SpeedInc.Value
+                            else
+                                Factor = Factor - SpeedInc.Value
+                            end
+
+                            if Factor < -(max.Value) then
+                                Dir = true
+                            elseif Factor > (max.Value) then
+                                Dir = false
+                            end
+                            Tick = tick() + (ChangeDelay.Value / 100)
+                        end
+
+                        local speed = (math.clamp(SpeedVal.Value + Factor, SpeedVal.Value, math.huge))
+                        BodyVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity") or Instance.new("BodyVelocity", entity.character.HumanoidRootPart)
+                        BodyVelocity.Velocity = MoveDirection * speed
+                        BodyVelocity.MaxForce = Vector3.new(9e9, 0, 9e9)
+                    end)
+                else
+                    funcs:bindToHeartbeat("speedBedwars", function(dt) 
+                        if not entity.isAlive then 
+                            return
+                        end
+    
+                        local Speed = CFrameSpeed.Value
+                        local Humanoid = entity.character.Humanoid
+                        local RootPart = entity.character.HumanoidRootPart
+                        local MoveDirection = Humanoid.MoveDirection
+                        local Factor = Speed - Humanoid.WalkSpeed
+                        MoveDirection = (MoveDirection * Factor) * dt
+                        local NewCFrame = RootPart.CFrame + Vector3.new(MoveDirection.X, 0, MoveDirection.Z)
+
+                        RootPart.CFrame =  NewCFrame
+                    end)
+                end
             else
                 funcs:unbindFromHeartbeat("speedBedwars")
                 if BodyVelocity then 
@@ -553,6 +572,26 @@ do
                 end
             end
         end
+    })
+    SpeedMode = Speed.CreateDropdown({
+        Name = "mode",
+        List = {"cframe", "heatseeker"},
+        Default = "heatseeker",
+        Function = function(value) 
+            if Speed.Enabled then
+                Speed.Toggle()
+                Speed.Toggle()
+            end
+
+            if CFrameSpeed.Instance then
+                CFrameSpeed.Instance.Visible = value == 'cframe'
+
+                SpeedInc.Instance.Visible = value == 'heatseeker'
+                max.Instance.Visible = value == 'heatseeker'
+                SpeedVal.Instance.Visible = value == 'heatseeker'
+                ChangeDelay.Instance.Visible = value == 'heatseeker'
+            end
+        end,
     })
     ChangeDelay = Speed.CreateSlider({
         Name = "change delay",
@@ -586,9 +625,17 @@ do
         Round = 1,
         Function = function() end,
     })
+    CFrameSpeed = Speed.CreateSlider({
+        Name = "cframe speed",
+        Min = 0.1,
+        Max = 40,
+        Default = 20,
+        Round = 1,
+        Function = function() end,
+    })
+    CFrameSpeed.Instance.Visible = false
 
 
-    local inc = 0.45
     local CTick = 0;
     local Tick = 0;
     local CFrameDelay = {};
@@ -607,7 +654,7 @@ do
         Function = function(callback) 
             if callback then 
                 local Dir2 = true
-                local YVelo, Dir = 0, true
+                local YVelo = 0
                 funcs:bindToHeartbeat("flyBedwars", function(dt)
                     if not entity.isAlive then
                         return 
@@ -659,7 +706,8 @@ do
                     end
 
                     local speed = math.clamp(FlySpeed.Value + Factor, FlySpeed.Value, math.huge)
-                    local NewVelo = Vector3.new(MoveDirection.X * speed, Y, MoveDirection.Z * speed)
+                    local MD = MoveDirection * speed
+                    local NewVelo = Vector3.new(MD.X, Y, MD.Z)
                     LinearVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("LinearVelocity") or Instance.new("LinearVelocity", entity.character.HumanoidRootPart)
                     LinearVelocity.Attachment0 = entity.character.HumanoidRootPart:FindFirstChildOfClass("Attachment")
                     LinearVelocity.MaxForce = 9e9
@@ -1221,4 +1269,45 @@ do
             end
         end
     })]]
+end
+
+do 
+    local remote = modules.Client:Get(remotes.ItemPickupRemote).instance
+    local _I
+    local LagbackAllDelay = {}
+    local LagbackAll = {}; LagbackAll = GuiLibrary.Objects.exploitsWindow.API.CreateOptionsButton({
+        Name = "lagbackall",
+        Function = function(callback) 
+            if callback then 
+                if not _I then -- 
+                    _I = {}
+                    local _l
+                    for _X = 1,150000 do
+                        _I[#_I+1] = (_l or {})
+                        _l = _I[#_I]
+                    end
+                end
+
+                coroutine.wrap(function() 
+                    repeat
+                        pcall(function()
+                            coroutine.wrap(function()
+                                remote:InvokeServer(_I)
+                            end)()
+                        end)
+                        task.wait(LagbackAllDelay.Value)
+                    until not LagbackAll.Enabled
+                end)()    
+            end
+        end
+    })
+    LagbackAllDelay = LagbackAll.CreateSlider({
+        Name = "delay",
+        Default = 0.1,
+        Min = 0,
+        Max = 2,
+        Round = 3,
+        Function = function(value)
+        end
+    })
 end
