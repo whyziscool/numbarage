@@ -495,22 +495,27 @@ end
 do 
     GuiLibrary.utils:removeObject("speedOptionsButton")
     local Factor = 0
-    local Dir = true
     local BodyVelocity;
     local Fly = {};
-    local Tick = 0
-    local ChangeDelay = {}
+    local ST = 0
     local SpeedInc = {};
-    local max = {};
     local SpeedVal = {};
     local Speed = {};
     local SpeedMode = {};
     local CFrameSpeed = {};
+    local Delay = {};
+    local SpeedBase = {};
     Speed = GuiLibrary.Objects.movementWindow.API.CreateOptionsButton({
         Name = "speed",
         Function = function(callback) 
             if callback then 
                 if SpeedMode.Value == 'heatseeker' then
+                    coroutine.wrap(function()
+                        repeat
+                            ST = workspace:GetServerTimeNow() + (SpeedInc.Value)
+                            task.wait(Delay.Value + SpeedInc.Value)
+                        until not Speed.Enabled
+                    end)()
                     funcs:bindToHeartbeat("speedBedwars", function(dt)
                         if Fly.Enabled then 
                             if BodyVelocity then 
@@ -527,24 +532,9 @@ do
                         local Humanoid = entity.character.Humanoid
                         local MoveDirection = Humanoid.MoveDirection
 
-                        if Tick - tick() < 0 then
-                            if Dir then
-                                Factor = Factor + SpeedInc.Value
-                            else
-                                Factor = Factor - SpeedInc.Value
-                            end
-
-                            if Factor < -(max.Value) then
-                                Dir = true
-                            elseif Factor > (max.Value) then
-                                Dir = false
-                            end
-                            Tick = tick() + (ChangeDelay.Value / 100)
-                        end
-
-                        local speed = (math.clamp(SpeedVal.Value + Factor, SpeedVal.Value, math.huge))
+                        local speed = SpeedVal.Value + (entity.character.Humanoid.WalkSpeed - SpeedVal.Value) * (1 - (math.max(ST - workspace:GetServerTimeNow(), 0)) / SpeedInc.Value)
                         BodyVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("BodyVelocity") or Instance.new("BodyVelocity", entity.character.HumanoidRootPart)
-                        BodyVelocity.Velocity = MoveDirection * speed
+                        BodyVelocity.Velocity = MoveDirection * math.clamp(speed, SpeedBase.Value, math.huge)
                         BodyVelocity.MaxForce = Vector3.new(9e9, 0, 9e9)
                     end)
                 else
@@ -587,42 +577,41 @@ do
                 CFrameSpeed.Instance.Visible = value == 'cframe'
 
                 SpeedInc.Instance.Visible = value == 'heatseeker'
-                max.Instance.Visible = value == 'heatseeker'
-                SpeedVal.Instance.Visible = value == 'heatseeker'
-                ChangeDelay.Instance.Visible = value == 'heatseeker'
+                SpeedVal.Instance.Visible = value == 'heatseeker'   
+                Delay.Instance.Visible = value == 'heatseeker'
             end
         end,
     })
-    ChangeDelay = Speed.CreateSlider({
-        Name = "change delay",
-        Min = 0.1,
-        Max = 1,
-        Default = 0.2,
-        Round = 2,
+    SpeedVal = Speed.CreateSlider({
+        Name = "speed",
+        Min = 25,
+        Max = 60,
+        Default = 20,
+        Round = 1,
         Function = function() end,
     })
-    SpeedVal = Speed.CreateSlider({
-        Name = "speed min",
+    SpeedBase = Speed.CreateSlider({
+        Name = "base speed",
         Min = 10,
         Max = 25,
         Default = 20,
         Round = 1,
         Function = function() end,
     })
-    max = Speed.CreateSlider({
-        Name = "speed max",
-        Min = 25,
-        Max = 90,
-        Default = 50,
-        Round = 1,
+    SpeedInc = Speed.CreateSlider({
+        Name = "pulse duration",
+        Min = 0,
+        Max = 3,
+        Default = 1,
+        Round = 2,
         Function = function() end,
     })
-    SpeedInc = Speed.CreateSlider({
-        Name = "speed inc",
-        Min = 0.1,
+    Delay = Speed.CreateSlider({
+        Name = 'pulse delay',
+        Min = 0,
         Max = 3,
-        Default = 2.1,
-        Round = 1,
+        Default = 0,
+        Round = 2,
         Function = function() end,
     })
     CFrameSpeed = Speed.CreateSlider({
@@ -636,18 +625,15 @@ do
     CFrameSpeed.Instance.Visible = false
 
 
-    local CTick = 0;
-    local Tick = 0;
-    local CFrameDelay = {};
-    local CFrameDist = {};
+    local ST2 = 0;
     local LinearVelocity
     local BounceMax = {};
-    local ChangeDelay = {};
-    local FlySpeedInc = {};
+    local SpeedInc2 = {};
     local BounceInc = {};
-    local max2 = {};
+    local FlySpeedMin = {};
     local FlySpeed = {};
     local FlyVSpeed = {};
+    local FlyDelay = {};
     GuiLibrary.utils:removeObject("flyOptionsButton")
     Fly = GuiLibrary.Objects.movementWindow.API.CreateOptionsButton({
         Name = "fly",
@@ -655,6 +641,12 @@ do
             if callback then 
                 local Dir2 = true
                 local YVelo = 0
+                coroutine.wrap(function()
+                    repeat
+                        ST2 = workspace:GetServerTimeNow() + (SpeedInc2.Value)
+                        task.wait(FlyDelay.Value + SpeedInc2.Value)
+                    until not Speed.Enabled
+                end)()
                 funcs:bindToHeartbeat("flyBedwars", function(dt)
                     if not entity.isAlive then
                         return 
@@ -664,37 +656,16 @@ do
                     local MoveDirection = Humanoid.MoveDirection
                     local Velocity = entity.character.HumanoidRootPart.Velocity
 
-                    if CTick - tick() < 0 then 
-                        local MoveDirection2 = (MoveDirection * CFrameDist.Value)
-                        CTick = tick() + CFrameDelay.Value
-                        entity.character.HumanoidRootPart.CFrame = entity.character.HumanoidRootPart.CFrame + Vector3.new(MoveDirection2.X, 0, MoveDirection2.Z)
+                    if YVelo >= BounceMax.Value then
+                        Dir2 = false 
+                    elseif YVelo <= -BounceMax.Value then
+                        Dir2 = true
                     end
 
-                    if Tick - tick() < 0 then
-                        if Dir then
-                            YVelo = YVelo + BounceInc.Value
-                        else    
-                            YVelo = YVelo - BounceInc.Value
-                        end
-
-                        if YVelo < -BounceMax.Value then
-                            Dir = true
-                        elseif YVelo > BounceMax.Value then
-                            Dir = false
-                        end
-
-                        if Dir2 then
-                            Factor = Factor + FlySpeedInc.Value
-                        else
-                            Factor = Factor - FlySpeedInc.Value
-                        end
-
-                        if Factor < -(max2.Value) then
-                            Dir2 = true
-                        elseif Factor > (max2.Value) then
-                            Dir2 = false
-                        end
-                        Tick = tick() + (ChangeDelay.Value / 100)
+                    if Dir2 then
+                        YVelo = YVelo + BounceInc.Value
+                    else
+                        YVelo = YVelo - BounceInc.Value
                     end
 
                     local Y = YVelo
@@ -705,7 +676,8 @@ do
                         Y = FlyVSpeed.Value
                     end
 
-                    local speed = math.clamp(FlySpeed.Value + Factor, FlySpeed.Value, math.huge)
+                    local speed = FlySpeed.Value + (entity.character.Humanoid.WalkSpeed - FlySpeed.Value) * (1 - (math.max(ST2 - workspace:GetServerTimeNow(), 0)) / SpeedInc2.Value)
+                    speed = math.clamp(speed, FlySpeedMin.Value, math.huge)
                     local MD = MoveDirection * speed
                     local NewVelo = Vector3.new(MD.X, Y, MD.Z)
                     LinearVelocity = entity.character.HumanoidRootPart:FindFirstChildOfClass("LinearVelocity") or Instance.new("LinearVelocity", entity.character.HumanoidRootPart)
@@ -722,40 +694,40 @@ do
             end
         end
     })
-    ChangeDelay = Fly.CreateSlider({
-        Name = "change delay",
-        Min = 0.1,
-        Max = 1,
-        Default = 0.2,
-        Round = 2,
-        Function = function() end,
-    })
-    FlySpeedInc = Fly.CreateSlider({
-        Name = "speed inc",
-        Min = 0,
-        Max = 4,
-        Default = 2.9,
+    FlySpeed = Fly.CreateSlider({
+        Name = "speed",
+        Min = 25,
+        Max = 60,
+        Default = 20,
         Round = 1,
         Function = function() end,
     })
-    FlySpeed = Fly.CreateSlider({
-        Name = "speed min",
-        Min = 10,
+    SpeedInc2 = Fly.CreateSlider({
+        Name = "pulse duration",
+        Min = 0,
+        Max = 3,
+        Default = 1,
+        Round = 2,
+        Function = function() end,
+    })
+    FlyDelay = Fly.CreateSlider({
+        Name = 'pulse delay',
+        Min = 0,
+        Max = 3,
+        Default = 0,
+        Round = 2,
+        Function = function() end,
+    })
+    FlySpeedMin = Fly.CreateSlider({
+        Name = "base speed",
+        Min = 0,
         Max = 25,
         Default = 20,
         Round = 1,
         Function = function() end,
     })
-    max2 = Fly.CreateSlider({
-        Name = "speed max",
-        Min = 25,
-        Max = 100,
-        Default = 67,
-        Round = 1,
-        Function = function() end,
-    })
     BounceInc = Fly.CreateSlider({
-        Name = "bounce inc",
+        Name = "bounce speed",
         Min = 0,
         Max = 3,
         Default = 0.8,
@@ -763,7 +735,7 @@ do
         Function = function() end,
     })
     BounceMax = Fly.CreateSlider({
-        Name = "bounce cap",
+        Name = "bounce height",
         Min = 0,
         Max = 60,
         Default = 25,
@@ -1309,5 +1281,40 @@ do
         Round = 3,
         Function = function(value)
         end
+    })
+end
+
+do 
+    local function disablerFunction() 
+        entity.character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+        entity.character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+        repeat task.wait() until entity.character.Humanoid.MoveDirection ~= Vector3.zero
+        task.wait(0.2)
+        entity.character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+        entity.character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        workspace.Gravity = 192.6
+    end
+
+    local worker = funcs:newWorker()
+    local acdisabler = {Enabled = false}
+    acdisabler = GuiLibrary.Objects.exploitsWindow.API.CreateOptionsButton({
+        Name = "acdisabler",
+        Function = function(callback)
+            if callback then
+                if entity.isAlive then 
+                    coroutine.wrap(disablerFunction)()
+                end
+                worker:add(lplr.CharacterAdded:Connect(function() 
+                    coroutine.wrap(function()
+                        repeat task.wait() until entity.isAlive
+                        task.wait(1)
+                        disablerFunction()
+                    end)()
+                end))
+                --acdisabler.Toggle()
+            else
+                worker:clean()
+            end
+        end,
     })
 end

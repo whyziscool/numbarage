@@ -393,6 +393,14 @@ local guiButton = windows.other.CreateOptionsButton({
 })
 GuiLibrary.ClickGUI.Visible = false
 
+local canScale = guiButton.CreateToggle({
+    Name = "canScale",
+    Function = function(callback)
+        GuiLibrary.canScale = callback
+    end,
+    Default = true
+})
+
 local colorButton; colorButton = windows.other.CreateOptionsButton({
     Name = "colors",
     Function = function(callback)

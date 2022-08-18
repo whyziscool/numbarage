@@ -157,10 +157,14 @@ local utils = {}; GuiLibrary.utils = utils do
     end
 
     function utils:updateScale(UIScale) 
-        local ViewportSize = workspace.CurrentCamera.ViewportSize
-        local X = ViewportSize.X / 1920
-        local Y = ViewportSize.Y / 1080
-        UIScale.Scale = math.clamp(X, 0.3, 2)
+        if GuiLibrary.canScale then
+            local ViewportSize = workspace.CurrentCamera.ViewportSize
+            local X = ViewportSize.X / 1920
+            local Y = ViewportSize.Y / 1080
+            UIScale.Scale = math.clamp(X, 0.3, 2)
+        else
+            UIScale.Scale = 1
+        end
     end
 end
 
@@ -466,7 +470,7 @@ function GuiLibrary.CreateWindow(args)
         -- OPTIONS --
 
         function buttonapi.CreateToggle(args) 
-            local toggleapi = {Enabled = args.Default or false}
+            local toggleapi = {Enabled = false}
             local Toggle = Instance.new("TextButton")
             Toggle.Name = "Toggle"
             Toggle.Parent = ModuleOptionsContainer
@@ -519,13 +523,21 @@ function GuiLibrary.CreateWindow(args)
                 ToggleButton.BackgroundColor3 = utils:getColorOfObject(ToggleButton)
             end))
 
-            function toggleapi.Toggle() 
+            function toggleapi.Toggle(skipTween) 
                 if toggleapi.Enabled then 
                     toggleapi.Enabled = false
-                    ToggleButton:TweenPosition(UDim2.fromScale(-0.2, 0.5), "Out", "Quad", 0.2, true)
+                    if not skipTween then
+                        ToggleButton:TweenPosition(UDim2.fromScale(-0.2, 0.5), "Out", "Quad", 0.2, true)
+                    else
+                        ToggleButton.Position = UDim2.fromScale(-0.2, 0.5)
+                    end
                 else
                     toggleapi.Enabled = true
-                    ToggleButton:TweenPosition(UDim2.fromScale(0.6, 0.5), "Out", "Quad", 0.2, true)
+                    if not skipTween then
+                        ToggleButton:TweenPosition(UDim2.fromScale(0.6, 0.5), "Out", "Quad", 0.2, true)
+                    else
+                        ToggleButton.Position = UDim2.fromScale(0.6, 0.5)
+                    end
                 end
                 if args.Function then
                     args.Function(toggleapi.Enabled)
@@ -543,8 +555,9 @@ function GuiLibrary.CreateWindow(args)
                 Toggle_2.BorderSizePixel = 0
             end))
 
-            if (args.Default == true) then 
-                toggleapi.Toggle()
+            if (args.Default) and (toggleapi.Enabled ~= args.Default) then 
+                --print("[Module] " .. args.Name .. " is being enabled by default")
+                toggleapi.Toggle(true)
             end
 
             utils:addObject(args.Name .. "Toggle" .. "_" .. optionsbuttonname , {Name = args.Name, Instance = Toggle, Type = "Toggle", OptionsButton = optionsbuttonname, API = toggleapi, args = args})
