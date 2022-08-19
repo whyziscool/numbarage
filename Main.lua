@@ -30,7 +30,7 @@ local override = {
 }
 local funcs = {}; do
     function funcs:require(url, bypass, bypass2)
-        if isfile(url) then
+        if (not url:match("http")) and isfile(url) then
             return readfile(url)
         end
 

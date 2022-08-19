@@ -200,13 +200,13 @@ ClickGUI.Parent = ScreenGui
 ClickGUI.BackgroundTransparency = 1
 ClickGUI.Size = UDim2.new(1, 0, 1, 0)
 UIScale.Parent = ScreenGui
-if syn then
-    syn.protect_gui(ScreenGui)
-end
 if gethui and (not KRNL_LOADED) then
     ScreenGui.Parent = gethui()
 else
     ScreenGui.Parent = game:GetService("CoreGui").RobloxGui
+end
+if syn and not gethui then
+    syn.protect_gui(ScreenGui)
 end
 
 utils:updateScale(UIScale)
