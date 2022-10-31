@@ -346,7 +346,8 @@ do
     local KillauraShowTarget = {}
     local KillauraMulti = {}
     local HitRemote = Client:Get(remotes.SwordRemote)
-    local Killaura = {}; Killaura = GuiLibrary.Objects.combatWindow.API.CreateOptionsButton({
+    local Killaura = {}; 
+	Killaura = GuiLibrary.Objects.combatWindow.API.CreateOptionsButton({
         Name = "killaura",
         Function = function(callback) 
             if callback then 
