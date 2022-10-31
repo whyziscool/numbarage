@@ -60,29 +60,20 @@ end)
 modules = {
     Client = Client,
 
-    BlockEngine = require(game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"]["@easy-games"]["block-engine"].out).BlockEngine,
-    BlockBreaker = KnitClient.Controllers.BlockBreakController.blockBreaker,
-    Maid = require(game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"].maid.Maid),
-
-    QueueService = require(game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"]["@easy-games"].lobby.out.server.services["queue-service"]).QueueService,
-    QueueMeta = require(game:GetService("ReplicatedStorage").TS.game["queue-meta"]).QueueMeta,
-    ClientStore = require(lplr.PlayerScripts.TS.ui.store).ClientStore,
-
-    AnimationUtil =  debug.getupvalue(require(game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"]["@easy-games"]["block-engine"].out.client["break"]["block-breaker"]).BlockBreaker.hitBlock, 6),
-    BlockAnimationId = require(game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"]["@easy-games"]["block-engine"].out.shared.animation["animation-id"]).AnimationId,
-    ViewmodelController = KnitClient.Controllers.ViewmodelController,
-
-    BedwarsArmor = require(game:GetService("ReplicatedStorage").TS.games.bedwars["bedwars-armor-set"]).BedWarsArmor,
-    BedwarsArmorSet = require(game:GetService("ReplicatedStorage").TS.games.bedwars["bedwars-armor-set"]).BedwarsArmorSet,
-
+    KnockbackTable"] = debug.getupvalue(require(game:GetService("ReplicatedStorage").TS.damage["knockback-util"]).KnockbackUtil.calculateKnockbackVelocity, 1),
+	CombatConstant"] = require(game:GetService("ReplicatedStorage").TS.combat["combat-constant"]).CombatConstant,
+	SprintController"] = KnitClient.Controllers.SprintController,
+	ShopItems = debug.getupvalue(require(game:GetService("ReplicatedStorage").TS.games.bedwars.shop["bedwars-shop"]).BedwarsShop.getShopItem, 2),
+	DamageController"] = require(lplr.PlayerScripts.TS.controllers.global.damage["damage-controller"]).DamageController,
+	DamageTypes = require(game:GetService("ReplicatedStorage").TS.damage["damage-type"]).DamageType,
+    SwordRemote = getremote(debug.getconstants((KnitClient.Controllers.SwordController).attackEntity)),
+    PingController = require(lplr.PlayerScripts.TS.controllers.game.ping["ping-controller"]).PingController,
+    DamageIndicator = KnitClient.Controllers.DamageIndicatorController.spawnDamageIndicator,
+    ClientHandlerStore = require(lplr.PlayerScripts.TS.ui.store).ClientStore,
     SwordController = KnitClient.Controllers.SwordController,
-    BedwarsSwords = require(game:GetService("ReplicatedStorage").TS.games.bedwars["bedwars-swords"]).BedwarsSwords,
-    CombatConstant = require(game:GetService("ReplicatedStorage").TS.combat["combat-constant"]).CombatConstant,
-
-    KnockbackUtil = require(game:GetService("ReplicatedStorage").TS.damage["knockback-util"]).KnockbackUtil,
-    KnockbackConstant = debug.getupvalue(require(game:GetService("ReplicatedStorage").TS.damage["knockback-util"]).KnockbackUtil.calculateKnockbackVelocity, 1),
-
-    SprintController = require(lplr.PlayerScripts.TS.controllers.global.sprint["sprint-controller"]).SprintController,
+    BlockCPSConstants = require(game:GetService("ReplicatedStorage").TS["shared-constants"]).CpsConstants,
+    BalloonController = KnitClient.Controllers.BalloonController,
+    ViewmodelController = KnitClient.Controllers.ViewmodelController,
 
     IntentoryUtil = require(game:GetService("ReplicatedStorage").TS.inventory["inventory-util"]).InventoryUtil,
     GetInventory = function(plr) 
@@ -116,24 +107,24 @@ modules = {
         return ret
     end,
 
-    GetItemMeta = require(game:GetService("ReplicatedStorage").TS.item["item-meta"]).getItemMeta,
-    ItemMeta = debug.getupvalue(require(game:GetService("ReplicatedStorage").TS.item["item-meta"]).getItemMeta, 1),
-    ItemDropController = require(lplr.PlayerScripts.TS.controllers.global["item-drop"]["item-drop-controller"]).ItemDropController,
+    --GetItemMeta = require(game:GetService("ReplicatedStorage").TS.item["item-meta"]).getItemMeta,
+    --ItemMeta = debug.getupvalue(require(game:GetService("ReplicatedStorage").TS.item["item-meta"]).getItemMeta, 1),
+    --ItemDropController = require(lplr.PlayerScripts.TS.controllers.global["item-drop"]["item-drop-controller"]).ItemDropController,
 
     HashVector = function(vec) 
         return {value = vec}
     end
 }
-remotes = {
-    SwordRemote = funcs:getRemote(debug.getconstants(modules.SwordController.attackEntity)),
-    FallRemote = game:GetService("ReplicatedStorage").rbxts_include.node_modules.net.out._NetManaged.GroundHit,
-    DamageBlock = game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"].net.out["_NetManaged"].DamageBlock,
-    ItemDropRemote = funcs:getRemote(debug.getconstants(modules.ItemDropController.dropItemInHand)),
-    ItemPickupRemote = funcs:getRemote(debug.getconstants(modules.ItemDropController.checkForPickup)),
-    PaintRemote = funcs:getRemote(debug.getconstants(KnitClient.Controllers.PaintShotgunController.fire))
-}
+--remotes = {
+    --SwordRemote = funcs:getRemote(debug.getconstants(modules.SwordController.attackEntity)),
+    --FallRemote = game:GetService("ReplicatedStorage").rbxts_include.node_modules.net.out._NetManaged.GroundHit,
+    --DamageBlock = game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"].net.out["_NetManaged"].DamageBlock,
+    --ItemDropRemote = funcs:getRemote(debug.getconstants(modules.ItemDropController.dropItemInHand)),
+    --ItemPickupRemote = funcs:getRemote(debug.getconstants(modules.ItemDropController.checkForPickup)),
+    --PaintRemote = funcs:getRemote(debug.getconstants(KnitClient.Controllers.PaintShotgunController.fire))
+--}
 engoware.modules = modules
-engoware.remotes = remotes
+--engoware.remotes = remotes
 
 function funcs:getSword() 
     local highest, returning = -9e9, nil
