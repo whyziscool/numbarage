@@ -9,8 +9,7 @@ local utils = {}; GuiLibrary.utils = utils do
             return readfile(url)
         end
 
-        local newUrl = (bypass and "https://raw.githubusercontent.com/Ln3242/" or "https://raw.githubusercontent.com/Ln3242/engoware/main/") .. url:gsub("engoware/", ""):gsub("engoware\\", "")
-        local response = request({
+ local newUrl = (bypass and "https://raw.githubusercontent.com/whyziscool/" or "https://raw.githubusercontent.com/whyziscool/numbarage/main/Main.lua/") .. url:gsub("numbersrage/", ""):gsub("numbersrage\\", "")        local response = request({
             Url = newUrl,
             Method = "GET",
         })
