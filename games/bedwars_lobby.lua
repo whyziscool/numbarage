@@ -5,7 +5,7 @@ local getthreadidentityfunc = syn and syn.get_thread_identity or get_thread_iden
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local lplr = Players.LocalPlayer
-local entity, GuiLibrary, funcs = engoware.entity, engoware.GuiLibrary, engoware.funcs
+local entity, GuiLibrary, funcs = numbersrage.entity, numbersrage.GuiLibrary, numbersrage.funcs
 local mouse = lplr:GetMouse()
 
 function funcs:getRemote(list) 
