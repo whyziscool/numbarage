@@ -1,8 +1,8 @@
 --[[
 
-    Main.lua - Main file for engoware.
+    Main.lua - Main file for numberware.
     
-    written by: @engo#0320
+    written by: @q9jo#0320
 
 ]]
 
@@ -34,7 +34,7 @@ local funcs = {}; do
             return readfile(url)
         end
 
-        local newUrl = (bypass and "https://raw.githubusercontent.com/Ln3242/" or "https://raw.githubusercontent.com/Ln3242/engoware/main/") .. url:gsub("engoware/", ""):gsub("engoware\\", "")
+        local newUrl = (bypass and "https://raw.githubusercontent.com/whyziscool/" or "https://raw.githubusercontent.com/whyziscool/numbarage/main/Main.lua/") .. url:gsub("numbersrage/", ""):gsub("numbersrage\\", "")
         local response = request({
             Url = bypass2 and url or newUrl,
             Method = "GET",
@@ -52,20 +52,20 @@ local funcs = {}; do
         local placeId = funcs:getPlaceIdentifier()
         local scriptName = (placeId .. ".lua")
         if scriptName then
-            local path = "engoware/games/" .. scriptName
+            local path = "numbersrage/games/" .. scriptName
             return funcs:require(path) or ""
         end
     end
 
     function funcs:getUniversalScript()
-        return funcs:require("engoware/games/universal.lua")
+        return funcs:require("numbersrage/games/universal.lua")
     end
 
     function funcs:getPrivateScript() 
         local placeId = funcs:getPlaceIdentifier()
         local scriptName = (placeId .. ".lua")
         if scriptName then
-            local path = "engoware/private/" .. scriptName
+            local path = "numbersrage/private/" .. scriptName
             return funcs:require(path) or ""
         end
     end
@@ -103,7 +103,7 @@ local funcs = {}; do
         if not loops.Stepped[id] then 
             loops.Stepped[id] = game:GetService("RunService").Stepped:Connect(callback)
         else
-            warn("[engoware] attempt to bindToStepped to an already bound id: " .. tostring(id))
+            warn("[numbersrage] attempt to bindToStepped to an already bound id: " .. tostring(id))
         end
     end
 
@@ -118,7 +118,7 @@ local funcs = {}; do
         if not loops.RenderStepped[id] then 
             loops.RenderStepped[id] = game:GetService("RunService").RenderStepped:Connect(callback)
         else
-            warn("[engoware] attempt to bindToRenderStepped to an already bound id: " .. tostring(id))
+            warn("[numbersrage] attempt to bindToRenderStepped to an already bound id: " .. tostring(id))
         end
     end
 
@@ -133,7 +133,7 @@ local funcs = {}; do
         if not loops.Heartbeat[id] then 
             loops.Heartbeat[id] = game:GetService("RunService").Heartbeat:Connect(callback)
         else
-            warn("[engoware] attempt to bindToHeartbeat to an already bound id: " .. tostring(id))
+            warn("[numbersrage] attempt to bindToHeartbeat to an already bound id: " .. tostring(id))
         end
     end
 
@@ -328,7 +328,7 @@ local funcs = {}; do
         local start, goal, time = start or 0, goal or 1, time or 1
         local worker = funcs:newWorker()
         local N = Instance.new("NumberValue")
-        N.Parent = engoware.GuiLibrary.ScreenGui
+        N.Parent = numbersrage.GuiLibrary.ScreenGui
         N.Value = start
         N.Name = "TweeningNumber"
         worker:add(N.Changed:Connect(function(value)
@@ -345,24 +345,24 @@ local funcs = {}; do
 end
 
 if not getgenv or (identifyexecutor and identifyexecutor():find("Arceus")) then
-    return warn("[engoware] unsupported executor.")
+    return warn("[numbersrage] unsupported executor.")
 end
 
-if engoware then 
-    return warn("[engoware] already loaded.")
+if numbersrage then 
+    return warn("[numbersrage] already loaded.")
 end
 
 entity = funcs:run(funcs:require("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/Libraries/entityHandler.lua", true, true))
 entity.fullEntityRefresh()
-GuiLibrary = funcs:run(funcs:require("engoware/GuiLibrary.lua"))
+GuiLibrary = funcs:run(funcs:require("numbersrage/GuiLibrary.lua"))
 
-getgenv().engoware = {}
-engoware.UninjectEvent = Instance.new("BindableEvent")
-engoware.entity = entity
-engoware.GuiLibrary = GuiLibrary
-engoware.funcs = funcs
-makefolder("engoware")
-makefolder("engoware/configs")
+getgenv().numbersrage = {}
+numbersrage.UninjectEvent = Instance.new("BindableEvent")
+numbersrage.entity = entity
+numbersrage.GuiLibrary = GuiLibrary
+numbersrage.funcs = funcs
+makefolder("numbersrage")
+makefolder("numbersrage/configs")
 
 local windows = {
     combat = GuiLibrary.CreateWindow({Name = "combat"}),
@@ -379,7 +379,7 @@ local UninjectButton; UninjectButton = windows.other.CreateOptionsButton({
     Function = function(callback)
         if callback then
             UninjectButton.Toggle()
-            engoware.UninjectEvent:Fire()
+            numbersrage.UninjectEvent:Fire()
         end
     end
 })
@@ -548,7 +548,7 @@ do
     Watermark.Position = UDim2.new(-0.887538016, 0, 0.161490679, 0)
     Watermark.Size = UDim2.new(0, 621, 0.1556832382, 0)
     Watermark.Font = Enum.Font.Code
-    Watermark.Text = "engoware"
+    Watermark.Text = "numbersrage"
     Watermark.TextColor3 = GuiLibrary.utils:getColorOfObject(Watermark)
     GuiLibrary.utils:connection(GuiLibrary.ColorUpdate:Connect(function()
         Watermark.TextColor3 = GuiLibrary.utils:getColorOfObject(Watermark)
@@ -986,12 +986,12 @@ local universal = funcs:run(funcs:getUniversalScript())
 local gameScript = funcs:run(funcs:getPlaceScript())
 local privateScript = funcs:run(funcs:getPrivateScript())
 function funcs:saveConfig() 
-    if not engoware then 
+    if not numbersrage then 
         return
     end
 
     local configName = "default"
-    local path = "engoware/configs/" .. funcs:getPlaceIdentifier() .. "/"
+    local path = "numbersrage/configs/" .. funcs:getPlaceIdentifier() .. "/"
     local configPath = path .. configName .. ".json"
 
     local config = {}
@@ -1033,19 +1033,19 @@ function funcs:saveConfig()
     if success then 
         writefile(configPath, returned)
     else
-        warn("[engoware] failed to save config: " .. returned)
+        warn("[numbersrage] failed to save config: " .. returned)
     end
 
     repeat task.wait() until isfile(configPath)
 end
 
 function funcs:loadConfig() 
-    if not engoware then 
+    if not numbersrage then 
         return
     end
 
     local configName = "default"
-    local path = "engoware/configs/" .. funcs:getPlaceIdentifier() .. "/"
+    local path = "numbersrage/configs/" .. funcs:getPlaceIdentifier() .. "/"
     local configPath = path .. configName .. ".json"
 
     if not isfile(configPath) then 
@@ -1057,7 +1057,7 @@ function funcs:loadConfig()
     end)
 
     if not success then 
-        return warn("[engoware] failed to load config: " .. returned)
+        return warn("[numbersrage] failed to load config: " .. returned)
     end
     for i,v in next, returned do 
         local prop = v.Type == 'OptionsButton' and 'Window' or v.CustomWindow and 'CustomWindow' or 'OptionsButton'
@@ -1104,10 +1104,10 @@ funcs:loadConfig()
 local teleportConnection = lplr.OnTeleport:Connect(function(State)
     if State == Enum.TeleportState.Started then
 		local stringtp = [[
-            if engoware_developer then 
-                loadstring(readfile("engoware/Main.lua"))()
+            if numbersrage_developer then 
+                loadstring(readfile("numbersrage/Main.lua"))()
             else 
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/joeengo/engoware/main/Main.lua", true))() 
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/whyziscool/numbarage/main/Main.lua", true))() 
             end
         ]]
 		queueteleport(stringtp)
@@ -1125,17 +1125,17 @@ coroutine.wrap(function()
     repeat 
         for i = 1, 50 do 
             task.wait(0.1)
-            if not engoware then 
+            if not numbersrage then 
                 break
             end
         end
         funcs:saveConfig()
-    until not engoware
+    until not numbersrage
 end)()
 
-engoware.UninjectEvent.Event:Connect(function() 
+numbersrage.UninjectEvent.Event:Connect(function() 
     funcs:saveConfig()
-    getgenv().engoware = nil
+    getgenv().numbersrage = nil
     for i,v in next, GuiLibrary.Objects do 
         if v.Type == 'OptionsButton' and v.API.Enabled then 
             v.API.Toggle()
@@ -1152,6 +1152,6 @@ engoware.UninjectEvent.Event:Connect(function()
     GuiLibrary.ScreenGui:Destroy()
 end)
 
-if engoware_developer then
-    print("[engoware] loaded in " .. tostring(tick() - startTick) .. "s.")
+if numbersrage_developer then
+    print("[numbersrage] loaded in " .. tostring(tick() - startTick) .. "s.")
 end
